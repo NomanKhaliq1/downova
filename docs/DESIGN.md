@@ -1,6 +1,6 @@
 # Download manager design
 
-The Downova identity is a split, faceted D: a stable vertical spine and an angular forward-moving loop. Six-unit strokes and the open counter remain clear at 16 px. The manager uses a neutral work surface, restrained brand colour, vector file-type icons and textual status badges. At narrow widths, the table becomes a compact list. The sidebar and content scroll independently in desktop windows.
+The Downova identity is a split, faceted D: a stable vertical spine and an angular forward-moving loop. Six-unit strokes and the open counter remain clear at 16 px. The manager uses a neutral work surface, restrained brand colour, vector file-type icons and textual status badges. The transfer table is the main surface, with a compact navigation tree and toolbar. Narrow windows keep the same semantic table and scroll it horizontally. Navigation, table and secondary screens scroll independently.
 
 ## Identity and regeneration
 
@@ -13,34 +13,34 @@ The Downova identity is a split, faceted D: a stable vertical spine and an angul
 | Token | Light | Dark |
 | --- | --- | --- |
 | `--brand` | Generated `primary_color` | Generated `primary_color` |
-| `--bg` | `#f5f7fb` | `#10151e` |
-| `--panel` | `#ffffff` | `#181f2c` |
-| `--text` | `#182235` | `#ecf1fc` |
-| `--muted` | `#58677d` | `#a3b1c7` |
-| `--line` | `#dce2ec` | `#354156` |
-| `--control` | `#7b879c` | `#697b96` |
-| `--soft` | `#edf2fc` | `#26334b` |
+| `--bg` | `#f3f3f3` | `#202020` |
+| `--panel` | `#ffffff` | `#252525` |
+| `--text` | `#202020` | `#eeeeee` |
+| `--muted` | `#5b5b5b` | `#b8b8b8` |
+| `--line` | `#d8d8d8` | `#414141` |
+| `--control` | `#888888` | `#808080` |
+| `--soft` | `#f1f1f1` | `#333333` |
 | `--accent` | Brand colour | 45% brand mixed with white |
 | `--good` | `#137349` | `#78d9ae` |
 | `--bad` | `#b32539` | `#ff9cac` |
 
-Primary buttons use white on the brand colour (5.17:1). Brand text on the light selection surface is 4.60:1; input boundaries are at least 3.62:1. The browser check measures text, secondary text, accent, success, error and control-boundary pairs in both themes. A new primary colour should be contrast-checked before regenerating assets. Status always has a text label as well as colour. Inactive controls are visibly disabled. Theme follows the operating system until the user chooses Light or Dark; the choice is stored in localStorage. Manager and extension have independent localStorage origins.
+Primary buttons use white on the brand colour (5.17:1). Manager controls use neutral greys. Brand colour is reserved for progress, selection, primary actions and keyboard focus; neutral file icons and plain status labels avoid decorative colour. The browser check measures text, secondary text, accent, success, error and control-boundary pairs in both themes. A new primary colour should be contrast-checked before regenerating assets. Status always has a text label as well as colour. Inactive controls are visibly disabled. Theme follows the operating system until the user chooses Light or Dark; the choice is stored in localStorage. Manager and extension have independent localStorage origins.
 
 ## Typography, spacing and surfaces
 
 - System stack: Segoe UI, system-ui, sans-serif. No downloaded fonts.
-- Type: 26 px page title (23 px narrow), 20 px section title, 14 px base, 12 px form/table text, 10–11 px compact metadata. Weight 600–700 marks hierarchy; tabular data stays compact.
-- Spacing: 4 px base, with 8 / 12 / 16 / 24 / 32 px steps. Desktop gutters are 28 px, wide gutters 40 px, narrow gutters 14 px.
-- Radius: 6 px fields, 7 px controls, 10 px panels, 14 px dialogs.
-- Elevation: flat panels with a 1 px boundary; shadow only for dialogs, contextual actions and toasts. The dialog backdrop softens the underlying view.
+- Type: 15 px page title, 14 px section title, 12 px base/forms/table, 10–11 px compact metadata. Data rows use regular weight; headings use 600. Desktop rows are 31 px high.
+- Spacing: 4 px base, 4–8 px toolbar/table padding and 10–14 px form gutters. The table fills the remaining window height; there are no summary cards above it.
+- Radius: 2 px fields/panels, 3 px buttons/dialogs; the main table has square edges.
+- Elevation: flat work surfaces and 1 px dividers. Only dialogs, menus and toasts have a small 3 px / 12 px shadow; the backdrop has no blur.
 
 ## Components and interaction
 
-The manager includes navigation groups, transfer summary tiles, sortable/selectable task rows, progress meters, file-type tiles, status badges, responsive task cards, request-option forms, tab groups, queue cards, seven-day schedule toggles, settings sections, link-review rows, a progress graph, byte map, clipboard offer, empty/loading/error states, confirmations and live-region toasts.
+The manager includes navigation groups, compact toolbar actions with SVG icons and labels, sortable/selectable task rows, progress meters, neutral file-type icons, plain status labels, request-option forms, tab groups, queue cards, seven-day schedule toggles, settings sections, link-review rows, a progress graph, byte map, clipboard offer, empty/loading/error states, confirmations and live-region toasts.
 
 Select multiple tasks with checkboxes or Ctrl-click. Double-click or focus a row and press Enter for details. Shift+F10 opens contextual actions. Drag rows to set priority; Alt+Up / Alt+Down does the same using the keyboard. Reordering returns to manual order if the table was sorted. Escape dismisses dialogs and contextual actions. Dialog headers and actions stay visible while long forms scroll. Dialogs trap Tab / Shift+Tab and Add focuses the link field. Native labels and controls supply accessible names; focused controls have a 3 px outline. Progress updates change values without rebuilding the task list. Settings forms are not redrawn for background task events.
 
-The popup shares the tokens and file-list language. It retains `status`, `media`, `add`, `set_capture` and `open_ui` messages, page link/image collection, filtering, selection, and the right-click-menu handoff. It adds presentation-only theme selection and a preview mode. The popup preview does not require a browser extension host.
+The popup retains its existing compact browser layout and palette; the table above describes the manager palette. It retains `status`, `media`, `add`, `set_capture` and `open_ui` messages, page link/image collection, filtering, selection, and the right-click-menu handoff. It adds presentation-only theme selection and a preview mode. The popup preview does not require a browser extension host.
 
 All UI copy is in `ui/strings.js` (`S`, including `S.popup`). Generated `extension/popup-strings.js` lets the packaged popup remain independent. Engine-supplied names, categories, errors, notes, queue names, paths and URLs remain data. To localize, translate the object and set the document's `lang` and `dir`. Spacing and alignment use logical properties; numeric metrics and path inputs are isolated left-to-right; graph time keeps its normal order.
 
@@ -79,3 +79,7 @@ Evidence is in `docs/screenshots/`, `docs/design-browser-log.json`, `docs/design
 All interface icons are local SVG paths (`ui/icons.js`, generated `extension/popup-icons.js`), including file categories, toolbar actions, sorting and dialog close. File extensions remain part of file names rather than standing in for icons. The display name is generated from the brand file. The existing technical product ID and native-host address are retained so installed integration and storage locations remain compatible. Engine and host embed the brand file at compile time; rebuild release binaries after a brand change.
 
 The supplied tray/app ICOs are ready for native packaging. The current dmd tray implementation draws an arrow procedurally and does not load `tray_icon` from the brand file. That wiring is inside protected `server/` and remains pending; rebuilding applies the Downova tray tooltip/menu name but does not replace its procedural icon. No installer executable was built.
+
+## Desktop density pass
+
+The main window follows an Explorer/mail-client layout: a 160–176 px navigation tree, a compact connection/theme strip, a small view title, an icon-and-label command toolbar, one data table, and a bottom status bar. Transfer speed stays in the existing status bar. Main/history tables keep real column headers and native horizontal scrolling at narrow widths instead of becoming cards. Secondary date/category columns are hidden below 1100 px; name, size, progress, speed, ETA and status remain in the table. No API, event, selection, sorting or download action changed. The browser regression asserts row height, table viewport height, the absence of summary cards, and semantic table layout at 360 px.
