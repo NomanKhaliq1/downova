@@ -39,6 +39,10 @@ pub struct TaskOpts {
     pub filename: Option<String>,
     /// Streams: pick the best picture up to this height.
     pub max_height: Option<u32>,
+    /// The link is a page (YouTube...) for the helper tool yt-dlp.
+    pub ytdlp: bool,
+    /// With yt-dlp: only the sound.
+    pub audio_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -238,6 +242,11 @@ impl Manager {
         Ok(m)
     }
 
+    /// Where helper tools the app set up itself (yt-dlp) live: next to the state file.
+    pub fn tools_dir(&self) -> PathBuf {
+        self.0.path.parent().unwrap_or(std::path::Path::new(".")).join("tools")
+    }
+
     pub fn subscribe(&self) -> broadcast::Receiver<Event> {
         self.0.events.subscribe()
     }
@@ -296,7 +305,7 @@ impl Manager {
             if !s.queues.iter().any(|q| q.name == queue) {
                 return Err(Error::NotFound);
             }
-            let (category, mut dir) = s.settings.place(url);
+            let (category, mut dir) = if o.task.ytdlp { s.settings.place_as(url, "Video") } else { s.settings.place(url) };
             if let Some(d) = &o.dir {
                 dir = d.clone();
             }
@@ -526,6 +535,7 @@ impl Manager {
 
     fn tick(&self) {
         let (day, minute) = local_now();
+        let tools_dir = self.tools_dir();
         let mut starts = vec![];
         let mut events = vec![];
         {
@@ -568,7 +578,7 @@ impl Manager {
                     for id in ready.into_iter().take(free) {
                         let t = s.tasks.get_mut(&id).unwrap();
                         t.status = Status::Downloading;
-                        let o = Self::options(&s.settings, &t.opts);
+                        let o = Self::options(&s.settings, &t.opts, tools_dir.clone());
                         let ctl = Control::new(&o).with_global(self.0.global.clone());
                         starts.push((id, t.url.clone(), t.dir.clone(), o, ctl.clone()));
                         s.running.insert(id, Run { ctl, speed: 0.0, last: (now, 0) });
@@ -596,7 +606,7 @@ impl Manager {
         }
     }
 
-    fn options(s: &Settings, t: &TaskOpts) -> Options {
+    fn options(s: &Settings, t: &TaskOpts, tools_dir: PathBuf) -> Options {
         Options {
             connections: t.connections.unwrap_or(s.connections),
             headers: t.headers.clone(),
@@ -609,6 +619,10 @@ impl Manager {
             file_name: t.filename.clone(),
             max_height: t.max_height,
             ffmpeg_path: s.ffmpeg_path.clone(),
+            use_ytdlp: t.ytdlp,
+            audio_only: t.audio_only,
+            ytdlp_path: s.ytdlp_path.clone(),
+            tools_dir: Some(tools_dir),
             ..Options::default()
         }
     }

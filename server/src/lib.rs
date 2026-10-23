@@ -10,7 +10,7 @@ use axum::response::sse::{Event as Sse1, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use dm_core::{AddOpts, Error, Filter, Manager, Queue, Settings, Status, TaskOpts};
+use dm_core::{AddOpts, Error, Filter, Manager, Options, Queue, Settings, Status, TaskOpts};
 use futures_util::stream::{select, Stream, StreamExt};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -58,6 +58,9 @@ pub fn router(s: Arc<AppState>) -> Router {
         .route("/queues/{name}", axum::routing::put(put_queue).delete(delete_queue))
         .route("/export", get(export))
         .route("/capture", post(capture))
+        .route("/tools", get(get_tools))
+        .route("/tools/ytdlp/install", post(install_ytdlp))
+        .route("/tools/ytdlp/update", post(update_ytdlp))
         .route("/quit", post(quit))
         .route("/events", get(events))
         .layer(middleware::from_fn_with_state(s.clone(), auth));
@@ -167,6 +170,10 @@ struct AddReq {
     filename: Option<String>,
     /// Streams: best picture up to this height.
     max_height: Option<u32>,
+    /// The link is a page (YouTube...) to hand to the helper tool yt-dlp.
+    ytdlp: bool,
+    /// With yt-dlp: only the sound.
+    audio_only: bool,
 }
 
 impl AddReq {
@@ -186,6 +193,8 @@ impl AddReq {
                 sha256: self.sha256.clone(),
                 filename: self.filename.clone(),
                 max_height: self.max_height,
+                ytdlp: self.ytdlp,
+                audio_only: self.audio_only,
             },
         }
     }
@@ -336,6 +345,44 @@ async fn capture(State(s): St, Json(r): Json<CaptureReq>) -> Res {
         Err(Error::Duplicate(id)) => Ok(Json(json!({"captured": true, "id": id, "duplicate": true}))),
         Err(e) => Err(e.into()),
     }
+}
+
+// ---- helper tools (yt-dlp, ffmpeg) ----
+
+fn tool_opts(s: &AppState) -> Options {
+    let set = s.mgr.settings();
+    Options { ytdlp_path: set.ytdlp_path, ffmpeg_path: set.ffmpeg_path, tools_dir: Some(s.mgr.tools_dir()), ..Options::default() }
+}
+
+#[derive(Deserialize)]
+struct ToolsQ {
+    /// Also run the tool to learn its version (takes a moment, so only on request).
+    #[serde(default)]
+    details: bool,
+}
+
+async fn get_tools(State(s): St, Query(q): Query<ToolsQ>) -> Json<Value> {
+    let o = tool_opts(&s);
+    let (y, f) = (dm_core::ytdlp::find(&o), dm_core::stream::find_ffmpeg(&o));
+    let version = match (&y, q.details) {
+        (Some(p), true) => dm_core::tools::ytdlp_version(p).await,
+        _ => None,
+    };
+    let managed = y.as_ref().is_some_and(|p| p.starts_with(s.mgr.tools_dir()));
+    Json(json!({"ytdlp": {"ready": y.is_some(), "path": y, "version": version, "managed": managed}, "ffmpeg": {"ready": f.is_some(), "path": f}}))
+}
+
+/// Downloads yt-dlp from its GitHub releases (checksum verified). Only called when the user presses the button.
+async fn install_ytdlp(State(s): St) -> Res {
+    let p = dm_core::tools::install_ytdlp(&s.mgr.tools_dir()).await?;
+    let v = dm_core::tools::ytdlp_version(&p).await;
+    Ok(Json(json!({"ok": true, "path": p, "version": v})))
+}
+
+async fn update_ytdlp(State(s): St) -> Res {
+    let p = dm_core::ytdlp::find(&tool_opts(&s)).ok_or(Error::NotFound)?;
+    let v = dm_core::tools::update_ytdlp(&p).await?;
+    Ok(Json(json!({"ok": true, "version": v})))
 }
 
 async fn quit(State(s): St) -> Res {

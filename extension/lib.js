@@ -22,12 +22,13 @@ export function rangeTotal(contentRange) {
  * `h` holds lower-case header values. Returns {kind, size} or null.
  */
 export function classifyMedia(url, h) {
-  let path = '';
+  let path = '', host = '';
   try {
-    path = new URL(url).pathname;
+    ({ pathname: path, hostname: host } = new URL(url));
   } catch {
     return null;
   }
+  if (/(^|\.)googlevideo\.com$/.test(host) && path === '/videoplayback') return null; // one slice of a player stream, not a file
   if (SEGMENT_EXT.test(path)) return null; // pieces of a stream, not a file
   const type = (h['content-type'] || '').split(';')[0].trim().toLowerCase();
   const size = rangeTotal(h['content-range']) ?? (h['content-length'] ? Number(h['content-length']) : null);
@@ -107,4 +108,21 @@ export function collectFromPage(mode) {
     document.querySelectorAll('a[href]').forEach((a) => add(a.href, a.textContent));
   }
   return out;
+}
+
+const YTDLP_HOSTS = ['youtube.com', 'youtu.be', 'youtube-nocookie.com', 'vimeo.com', 'dailymotion.com', 'facebook.com', 'fb.watch', 'instagram.com', 'twitter.com', 'x.com', 'tiktok.com', 'twitch.tv', 'reddit.com', 'soundcloud.com', 'bilibili.com'];
+
+/** A page of a site whose videos can only be fetched with a helper tool (yt-dlp), and that page is a video page. */
+export function isYtdlpPage(url) {
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
+  const host = u.hostname.replace(/^www\.|^m\./, '');
+  if (!YTDLP_HOSTS.some((h) => host === h || host.endsWith('.' + h))) return false;
+  if (host === 'youtu.be') return u.pathname.length > 1;
+  if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) return /^\/(watch|shorts\/|live\/|embed\/)/.test(u.pathname) && (u.pathname !== '/watch' || u.searchParams.has('v'));
+  return u.pathname.length > 1; // other sites: anything below the home page
 }

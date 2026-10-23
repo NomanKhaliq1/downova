@@ -13,7 +13,9 @@ pub mod rules;
 pub mod schedule;
 pub mod state;
 pub mod stream;
+pub mod tools;
 pub mod util;
+pub mod ytdlp;
 
 pub use engine::{download, Control, Options, Progress};
 pub use error::{Error, Result};

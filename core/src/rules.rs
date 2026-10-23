@@ -45,6 +45,8 @@ pub struct Settings {
     pub start_with_windows: bool,
     /// ffmpeg for merging video and audio of streams. None = look beside the app and on PATH.
     pub ffmpeg_path: Option<PathBuf>,
+    /// yt-dlp for YouTube-style pages. None = the app's tools folder, beside the app, or PATH.
+    pub ytdlp_path: Option<PathBuf>,
 }
 
 fn cat(name: &str, exts: &str) -> Category {
@@ -81,6 +83,7 @@ impl Settings {
             clipboard_monitor: false,
             start_with_windows: false,
             ffmpeg_path: None,
+            ytdlp_path: None,
         }
     }
 
@@ -103,6 +106,17 @@ impl Settings {
             Some(r) => (name, self.folder(&r.folder)),
             None => (name, self.folder(&folder)),
         }
+    }
+
+    /// Like `place`, but the file type is decided by the caller (pages given to yt-dlp have no file extension).
+    pub fn place_as(&self, url: &str, category: &str) -> (String, PathBuf) {
+        let (_, mut dir) = self.place(url);
+        let host = Url::parse(url).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_default();
+        if !self.site_rules.iter().any(|r| host_matches(&host, &r.host)) {
+            let folder = self.categories.iter().find(|c| c.name == category).map_or(category.to_string(), |c| c.folder.clone());
+            dir = self.folder(&folder);
+        }
+        (category.to_string(), dir)
     }
 
     /// Should the browser extension leave this download alone?

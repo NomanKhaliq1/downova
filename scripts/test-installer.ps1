@@ -24,6 +24,19 @@ $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $nmKeys = 'Google\Chrome', 'Microsoft\Edge', 'BraveSoftware\Brave-Browser' | ForEach-Object { "HKCU:\Software\$_\NativeMessagingHosts\com.$product.host" }
 $lnk = Join-Path ([Environment]::GetFolderPath('Programs')) "$name.lnk"
 $realData = Join-Path $env:APPDATA $product
+$realDataBefore = Test-Path $realData
+
+# A real installation may be present (same product id, same browser helper name, same Start Menu shortcut). The test
+# replaces those entries for a moment, so save them first and put them back at the end.
+$prior = [pscustomobject]@{
+  helpers = @($nmKeys | ForEach-Object { try { (Get-ItemProperty $_ -ErrorAction Stop).'(default)' } catch { $null } })
+  run = (Get-ItemProperty $runKey -Name $product -ErrorAction SilentlyContinue).$product
+  uninst = Test-Path $uninstKey
+  lnkBackup = $null
+}
+if (Test-Path $lnk) { $prior.lnkBackup = Join-Path $env:TEMP ("dm-inst-lnk-" + [guid]::NewGuid().ToString('N').Substring(0, 6) + '.lnk'); Copy-Item $lnk $prior.lnkBackup }
+$uninstBackup = $null
+if ($prior.uninst) { $uninstBackup = Join-Path $env:TEMP ("dm-inst-uninst-" + [guid]::NewGuid().ToString('N').Substring(0, 6) + '.reg'); reg export ($uninstKey -replace '^HKCU:', 'HKCU') $uninstBackup /y | Out-Null }
 
 function State { [pscustomobject]@{
   uninst = Test-Path $uninstKey; run = [bool](Get-ItemProperty $runKey -Name $product -ErrorAction SilentlyContinue); nm = @($nmKeys | Where-Object { Test-Path $_ }).Count
@@ -33,8 +46,7 @@ function Wait-Until($cond, $sec = 15) { $t = Get-Date; while (((Get-Date) - $t).
 
 try {
   $s = State
-  Check 'clean machine before the test (no entries, no real data folder)' (-not ($s.uninst -or $s.run -or $s.nm -or $s.lnk)) ($s | ConvertTo-Json -Compress)
-  Check "no real $realData folder yet" (-not (Test-Path $realData))
+  Check 'existing registration noted (put back at the end)' $true (($s | ConvertTo-Json -Compress) + ' real data folder: ' + (Test-Path $realData))
 
   # ---- install ----
   $p = Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$inst", '/TASKS=autostart', "/LOG=$tmp\install.log" -Wait -PassThru
@@ -86,7 +98,7 @@ try {
   $left = if (Test-Path $inst) { @(Get-ChildItem $inst -Recurse -Force | Select-Object -ExpandProperty FullName) } else { @() }
   Check 'install folder is gone' ($left.Count -eq 0) ($left -join '; ')
   Check 'user data (list, settings) kept after a silent uninstall' (Test-Path "$tmp\data\state.json")
-  Check "no real $realData folder was created" (-not (Test-Path $realData))
+  Check 'the real data folder was not touched' ((Test-Path $realData) -eq $realDataBefore)
 }
 finally {
   # whatever happened above: leave nothing behind
@@ -95,8 +107,14 @@ finally {
   Start-Sleep 1
   Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
   Remove-Item Env:DM_DATA_DIR, Env:DM_DOWNLOAD_DIR -ErrorAction SilentlyContinue
+  # put back what was there before the test
+  for ($i = 0; $i -lt $nmKeys.Count; $i++) { if ($prior.helpers[$i]) { reg add ($nmKeys[$i] -replace '^HKCU:', 'HKCU') /ve /t REG_SZ /d $prior.helpers[$i] /f | Out-Null } }
+  if ($prior.run) { Set-ItemProperty $runKey -Name $product -Value $prior.run }
+  if ($prior.lnkBackup) { Copy-Item $prior.lnkBackup $lnk -Force; Remove-Item $prior.lnkBackup }
+  if ($uninstBackup) { reg import $uninstBackup 2>$null | Out-Null; Remove-Item $uninstBackup }
   $s = State
-  Check 'registry and shortcut clean after the test' (-not ($s.uninst -or $s.run -or $s.nm -or $s.lnk)) ($s | ConvertTo-Json -Compress)
+  $want = [pscustomobject]@{ uninst = $prior.uninst; run = [bool]$prior.run; nm = @($prior.helpers | Where-Object { $_ }).Count; lnk = [bool]$prior.lnkBackup; dir = $false }
+  Check 'registry and shortcut are exactly as they were before the test' (($s | ConvertTo-Json -Compress) -eq ($want | ConvertTo-Json -Compress)) (($s | ConvertTo-Json -Compress) + ' expected ' + ($want | ConvertTo-Json -Compress))
   Check 'temp folder removed' (-not (Test-Path $tmp))
   $bad = @($results | Where-Object { -not $_.ok }).Count
   if ($bad) { "`n$bad check(s) failed"; exit 1 } else { "`nall checks passed" }

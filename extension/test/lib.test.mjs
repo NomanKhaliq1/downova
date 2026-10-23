@@ -82,3 +82,17 @@ test('collectFromPage de-duplicates and keeps only http(s)', () => {
   assert.deepEqual(collectFromPage('images').map((x) => x.url), ['https://a.com/i.jpg', 'https://a.com/pic.png']);
   delete globalThis.document;
 });
+
+test('YouTube player slices are not downloadable files, but the watch page is a video page', async () => {
+  const { isYtdlpPage } = await import('../lib.js');
+  assert.equal(classifyMedia('https://rr3---sn-x.googlevideo.com/videoplayback?expire=1&range=0-99', { 'content-type': 'video/mp4', 'content-length': String(5 * MB) }), null);
+  assert.equal(isYtdlpPage('https://www.youtube.com/watch?v=abc123'), true);
+  assert.equal(isYtdlpPage('https://www.youtube.com/'), false);
+  assert.equal(isYtdlpPage('https://www.youtube.com/watch'), false);
+  assert.equal(isYtdlpPage('https://youtu.be/abc123'), true);
+  assert.equal(isYtdlpPage('https://www.youtube.com/shorts/xyz'), true);
+  assert.equal(isYtdlpPage('https://vimeo.com/12345'), true);
+  assert.equal(isYtdlpPage('https://vimeo.com/'), false);
+  assert.equal(isYtdlpPage('https://example.com/watch?v=1'), false);
+  assert.equal(isYtdlpPage('not a url'), false);
+});

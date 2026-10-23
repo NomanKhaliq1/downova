@@ -50,6 +50,19 @@ fn install(brand: &Brand, dir: &std::path::Path) -> Result<(), String> {
     Ok(())
 }
 
+/// True when the browser has no entry for our helper at all (an entry that points elsewhere is left alone).
+fn missing(brand: &Brand, browser_key: &str) -> bool {
+    let key = format!(r"{browser_key}\com.{}.host", brand.product_id);
+    let mut c = Command::new("reg");
+    c.args(["query", &key]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        c.creation_flags(0x0800_0000);
+    }
+    !c.output().is_ok_and(|o| o.status.success())
+}
+
 fn uninstall(brand: &Brand, dir: &std::path::Path) {
     let name = format!("com.{}.host", brand.product_id);
     for b in BROWSERS {
@@ -81,6 +94,12 @@ fn main() {
             }
         },
         Some("uninstall") => uninstall(&brand, &dir),
+        // run by the app at start-up: something (a cleaner, a profile reset) may have removed the registration
+        Some("repair") => {
+            if BROWSERS.iter().any(|b| missing(&brand, b)) {
+                let _ = install(&brand, &dir);
+            }
+        }
         _ => {
             if serve(&cfg, std::io::stdin().lock(), std::io::stdout().lock()).is_err() {
                 std::process::exit(1);

@@ -47,7 +47,9 @@ fn running_instance(api_file: &Path, product_id: &str) -> Option<(u16, String)> 
 }
 
 fn ui_url(port: u16, token: &str, view: &str) -> String {
-    format!("http://127.0.0.1:{port}/#token={token}&view={view}")
+    // "streams" opens Settings on the streams tab (where the YouTube helper is set up); other views are a hash hint for the page
+    let query = if view == "streams" { "?screen=settings&tab=streams" } else { "" };
+    format!("http://127.0.0.1:{port}/{query}#token={token}&view={view}")
 }
 
 fn find_ui_dir() -> PathBuf {
@@ -94,6 +96,8 @@ fn tray_icon(hex: &str) -> Icon {
 fn main() {
     let brand: Brand = toml::from_str(include_str!("../../../brand/brand.toml")).expect("brand/brand.toml");
     let background = std::env::args().any(|a| a == "--background");
+    let args: Vec<String> = std::env::args().collect();
+    let view = args.iter().position(|a| a == "--view").and_then(|i| args.get(i + 1)).cloned().unwrap_or_else(|| "main".into());
     let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
     // DM_DATA_DIR / DM_DOWNLOAD_DIR let tests run against throwaway folders without touching the user's
     let data_dir = std::env::var_os("DM_DATA_DIR").map(PathBuf::from).unwrap_or_else(|| appdata.join(&brand.product_id));
@@ -102,7 +106,7 @@ fn main() {
 
     if let Some((port, token)) = running_instance(&api_file, &brand.product_id) {
         if !background {
-            system::open_ui(&ui_url(port, &token, "main"));
+            system::open_ui(&ui_url(port, &token, &view));
         }
         return;
     }
@@ -120,6 +124,20 @@ fn main() {
             return;
         }
     };
+
+    // the browser helper registration can disappear (cleaners, profile resets, another tool): put it back if it is missing
+    if std::env::var_os("DM_DATA_DIR").is_none() {
+        if let Some(host) = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.join("dmhost.exe"))).filter(|p| p.exists()) {
+            let mut c = std::process::Command::new(host);
+            c.arg("repair");
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                c.creation_flags(0x0800_0000);
+            }
+            let _ = c.spawn();
+        }
+    }
 
     let std_listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind loopback");
     std_listener.set_nonblocking(true).unwrap();
@@ -200,7 +218,7 @@ fn main() {
     let _tray = TrayIconBuilder::new().with_menu(Box::new(menu)).with_tooltip(&brand.name).with_icon(tray_icon(&brand.primary_color)).build().expect("tray icon");
 
     if !background {
-        system::open_ui(&ui_url(port, &token, "main"));
+        system::open_ui(&ui_url(port, &token, &view));
     }
 
     let rt_handle = rt.handle().clone();

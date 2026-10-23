@@ -39,6 +39,14 @@ pub struct Options {
     pub ffmpeg_path: Option<PathBuf>,
     /// Name for the saved file when the link itself has no useful one (a page title, for example).
     pub file_name: Option<String>,
+    /// The link is a web page (YouTube...) that the helper tool yt-dlp has to extract.
+    pub use_ytdlp: bool,
+    /// With yt-dlp: save only the sound.
+    pub audio_only: bool,
+    /// Where yt-dlp is. None = the app's tools folder, next to the app, or PATH.
+    pub ytdlp_path: Option<PathBuf>,
+    /// The app's own folder for helper tools it set up itself.
+    pub tools_dir: Option<PathBuf>,
 }
 
 impl Default for Options {
@@ -58,6 +66,10 @@ impl Default for Options {
             max_height: None,
             ffmpeg_path: None,
             file_name: None,
+            use_ytdlp: false,
+            audio_only: false,
+            ytdlp_path: None,
+            tools_dir: None,
         }
     }
 }
@@ -188,6 +200,9 @@ fn sha256_of(path: &Path) -> std::io::Result<String> {
 /// Download `url` into `dir`; returns the final path. Resumes automatically when a matching `.part.json` exists.
 pub async fn download(url: &str, dir: &Path, o: &Options, ctl: &Control) -> Result<PathBuf> {
     fs::create_dir_all(dir)?;
+    if o.use_ytdlp {
+        return crate::ytdlp::run(url, dir, o, ctl).await;
+    }
     let client = build_client(o)?;
     // a connection that times out once (a dead IPv6 route, a busy CDN node) often works on the next try
     let mut attempt = 0;

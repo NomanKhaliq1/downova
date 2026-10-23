@@ -65,7 +65,9 @@ Filename: "{app}\dmd.exe"; Description: "Start {#BrandName} now"; Flags: nowait 
 #if StoreUrl != ""
 Filename: "{#StoreUrl}"; Description: "Add the {#BrandName} browser extension"; Flags: shellexec nowait postinstall skipifsilent
 #else
-Filename: "{app}\extension"; Description: "Open the browser extension folder (Chrome/Edge: Extensions > Developer mode > Load unpacked)"; Flags: shellexec nowait postinstall skipifsilent unchecked
+; until the extension is in the Chrome Web Store, Chrome only accepts it through Developer mode > Load unpacked
+Filename: "{code:ChromePath}"; Parameters: "chrome://extensions"; Description: "Step 1 of 2: open Chrome's Extensions page (turn on Developer mode, press Load unpacked)"; Flags: nowait postinstall skipifsilent; Check: ChromeFound
+Filename: "{app}\extension"; Description: "Step 2 of 2: show the extension folder to pick in Chrome"; Flags: shellexec nowait postinstall skipifsilent
 #endif
 
 [UninstallDelete]
@@ -73,6 +75,27 @@ Type: files; Name: "{app}\com.{#ProductId}.host.json"
 Type: dirifempty; Name: "{app}"
 
 [Code]
+// Where chrome.exe is (registered by Chrome itself); empty when Chrome is not installed.
+function ChromePath(Param: String): String;
+var
+  P: String;
+begin
+  Result := '';
+  if RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe', '', P) and FileExists(P) then Result := P
+  else if RegQueryStringValue(HKLM, 'Software\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe', '', P) and FileExists(P) then Result := P
+  else if RegQueryStringValue(HKLM32, 'Software\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe', '', P) and FileExists(P) then Result := P;
+end;
+
+function ChromeFound: Boolean;
+begin
+  Result := ChromePath('') <> '';
+end;
+
+function HelperRegistered: Boolean;
+begin
+  Result := RegKeyExists(HKCU, 'Software\Google\Chrome\NativeMessagingHosts\com.{#ProductId}.host');
+end;
+
 // Ask a running copy to save its list and exit (used before upgrading and before removing).
 procedure QuitRunningApp(AppDir: String);
 var
@@ -88,6 +111,23 @@ function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
   QuitRunningApp(ExpandConstant('{app}'));
   Result := '';
+end;
+
+// The browser helper registration is what lets the extension talk to the app. If it did not take, try once more and say so.
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  Code: Integer;
+begin
+  if CurStep = ssDone then
+  begin
+    if not HelperRegistered then
+    begin
+      Exec(ExpandConstant('{app}\dmhost.exe'), 'install', '', SW_HIDE, ewWaitUntilTerminated, Code);
+      if (not HelperRegistered) and (not WizardSilent) then
+        MsgBox('{#BrandName} could not register its browser helper, so the browser extension will show "Browser integration is not installed".' + #13#10 +
+               'Start {#BrandName} once: it repairs this on start. If it still shows, run dmhost.exe install from the install folder.', mbError, MB_OK);
+    end;
+  end;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

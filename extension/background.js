@@ -1,5 +1,5 @@
 import { BRAND_NAME, HOST } from './brand.js';
-import { classifyMedia, cookieHeader, fileName, isCapturableUrl, mediaKey, safeForBatch } from './lib.js';
+import { classifyMedia, cookieHeader, fileName, isCapturableUrl, isYtdlpPage, mediaKey, safeForBatch } from './lib.js';
 
 const VERSION = chrome.runtime.getManifest().version;
 const MAX_MEDIA_PER_TAB = 50;
@@ -157,9 +157,25 @@ async function addUrls(urls, referer, filename) {
   });
 }
 
-// ---- messages from the popup ----
+// ---- the helper tool for YouTube-style pages (yt-dlp), asked about at most every 30 s ----
 
-chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+let tools = { at: 0, ready: false };
+async function toolsReady() {
+  if (Date.now() - tools.at > 30000) {
+    const r = await api('GET', '/api/tools');
+    tools = { at: Date.now(), ready: !!(r.ok && r.status === 200 && r.body?.ytdlp?.ready) };
+  }
+  return tools.ready;
+}
+
+/** A whole page (YouTube, Vimeo...) handed to the helper tool instead of a direct file link. */
+function addPage(msg) {
+  return api('POST', '/api/tasks', { urls: safeForBatch(msg.url), ytdlp: true, max_height: msg.max_height, audio_only: msg.audio_only, filename: msg.filename, referer: msg.url });
+}
+
+// ---- messages from the popup and from the floating button ----
+
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   (async () => {
     switch (msg.type) {
       case 'status':
@@ -172,10 +188,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
         const k = mediaKeyFor(msg.tabId);
         return reply({ media: (await chrome.storage.session.get(k))[k] || [] });
       }
+      case 'media_here': {
+        // asked by the floating button: what can be downloaded from the tab it sits in
+        const k = mediaKeyFor(sender.tab?.id);
+        const media = ((await chrome.storage.session.get(k))[k] || []).filter((m) => ['video', 'audio', 'hls', 'dash'].includes(m.kind));
+        const page = msg.pageUrl || sender.tab?.url || '';
+        return reply({ media, ytdlp: isYtdlpPage(page) ? { ready: await toolsReady() } : null });
+      }
+      case 'add_page':
+        return reply(await addPage(msg));
       case 'add':
         return reply(await addUrls(msg.urls, msg.referer, msg.filename));
       case 'open_ui':
-        return reply(await call({ cmd: 'open_ui' }));
+        return reply(await call({ cmd: 'open_ui', view: msg.view }));
       default:
         return reply({ ok: false, error: 'unknown_message' });
     }

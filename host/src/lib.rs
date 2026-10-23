@@ -111,7 +111,7 @@ pub fn quit_app(cfg: &Config) -> bool {
 
 /// The only calls the extension may make. Everything else is refused.
 fn allowed(method: &str, path: &str) -> bool {
-    matches!((method, path), ("GET", "/api/ping") | ("GET", "/api/settings") | ("POST", "/api/capture") | ("POST", "/api/tasks"))
+    matches!((method, path), ("GET", "/api/ping") | ("GET", "/api/settings") | ("POST", "/api/capture") | ("POST", "/api/tasks") | ("GET", "/api/tools"))
 }
 
 fn fail(id: &Value, error: &str) -> Value {
@@ -135,7 +135,14 @@ pub fn handle(cfg: &Config, msg: &Value) -> Value {
                 None => fail(&id, "app_not_running"),
             }
         }
-        "open_ui" => match spawn_app(&cfg.app_path, &[]) {
+        "open_ui" => match {
+            // only known views may be asked for; the extension cannot pass anything else on a command line
+            let view = msg["view"].as_str().filter(|v| matches!(*v, "main" | "add" | "streams"));
+            match view {
+                Some(v) => spawn_app(&cfg.app_path, &["--view", v]),
+                None => spawn_app(&cfg.app_path, &[]),
+            }
+        } {
             Ok(()) => json!({"id": id, "ok": true}),
             Err(_) => fail(&id, "app_not_found"),
         },

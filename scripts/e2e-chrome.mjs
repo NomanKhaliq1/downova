@@ -79,6 +79,10 @@ const regHas = (k) => {
   }
 };
 
+// A real installation of the app may already have registered the helper under the same name: remember it, restore it at the end
+const priorHelper = regKeys.map((k) => {
+  try { return /REG_SZ\s+(.+)$/m.exec(execFileSync('reg', ['query', k, '/ve'], { encoding: 'utf8' }))?.[1].trim() ?? null; } catch { return null; }
+});
 let chrome = null;
 
 const apiInfo = () => JSON.parse(readFileSync(join(env.DM_DATA_DIR, 'api.json'), 'utf8'));
@@ -129,6 +133,22 @@ async function openPage(url) {
 }
 const clickDownload = (file) =>
   send('Runtime.evaluate', { expression: `(() => { const a = document.createElement('a'); a.href = '/files/${file}'; a.textContent = 'download'; document.body.append(a); a.click(); })()`, userGesture: true }, pageSession);
+// ---- the floating button lives in a closed shadow root: reach it through the DevTools DOM tree, click it with real mouse events ----
+const attr = (n, k) => { const a = n.attributes || []; const i = a.indexOf(k); return i >= 0 ? a[i + 1] : null; };
+function walk(n, fn) {
+  if (fn(n)) return n;
+  for (const c of [...(n.children || []), ...(n.shadowRoots || []), ...(n.contentDocument ? [n.contentDocument] : [])]) { const r = walk(c, fn); if (r) return r; }
+  return null;
+}
+const findNode = async (fn) => walk((await send('DOM.getDocument', { depth: -1, pierce: true }, pageSession)).root, fn);
+async function centerOf(node) {
+  const { model } = await send('DOM.getBoxModel', { nodeId: node.nodeId }, pageSession);
+  const q = model.content;
+  return { x: (q[0] + q[4]) / 2, y: (q[1] + q[5]) / 2, w: q[2] - q[0] };
+}
+const mouse = (type, x, y) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mouseReleased' ? 0 : 1, clickCount: 1 }, pageSession);
+async function clickNode(node) { const c = await centerOf(node); await mouse('mouseMoved', c.x, c.y); await mouse('mousePressed', c.x, c.y); await mouse('mouseReleased', c.x, c.y); }
+
 // each download starts from a fresh tab: Chrome limits repeated downloads per tab, which is not what is being tested here
 let lastTab = null;
 async function download(file) {
@@ -152,7 +172,7 @@ const targets = async () => (await send('Target.getTargets')).targetInfos;
 try {
   for (const f of ['dmd.exe', 'dmhost.exe']) if (!existsSync(join(rel, f))) throw new Error(`build first: ${f} missing in target/release`);
   if (!existsSync(join(dist, 'manifest.json'))) throw new Error('run scripts/package-extension.ps1 first');
-  check('nothing registered before the run', regKeys.every((k) => !regHas(k)));
+  check('existing helper registration noted (restored at the end)', true, `${priorHelper.filter(Boolean).length} of 3 were registered`);
 
   // temporary registration (removed in finally)
   execFileSync(join(rel, 'dmhost.exe'), ['install'], { stdio: 'ignore' });
@@ -208,6 +228,30 @@ try {
     return v.length && v;
   }, 15000).catch(() => null);
   check('video on the page was spotted', !!media && media.some((m) => m.name === 'clip.mp4' && m.kind === 'video' && m.size === SIZE), JSON.stringify(media));
+
+  // 1b. the floating download button on the video
+  const vr = (await send('Runtime.evaluate', { expression: 'JSON.stringify(document.querySelector("video").getBoundingClientRect())', returnByValue: true }, pageSession)).result.value;
+  const rect = JSON.parse(vr);
+  await mouse('mouseMoved', rect.left + rect.width / 2, rect.top + rect.height / 2); // pointer over the video
+  const pill = await until('floating button appears over the video', async () => {
+    const n = await findNode((x) => x.nodeName === 'BUTTON' && (attr(x, 'class') || '').split(' ').includes('pill'));
+    if (!n) return null;
+    return (await centerOf(n).catch(() => null)) ? n : null; // the button exists hidden first; it has a box only once shown
+  }, 10000).catch(() => null);
+  check('floating download button is on the page', !!pill);
+  if (pill) {
+    const pc = await centerOf(pill).catch(() => null);
+    check('it sits inside the top-right of the video', !!pc && pc.x > rect.left + rect.width / 2 && pc.x < rect.right && pc.y >= rect.top && pc.y < rect.top + rect.height / 2, pc ? `at ${Math.round(pc.x)},${Math.round(pc.y)} video ${Math.round(rect.left)}..${Math.round(rect.right)} x ${Math.round(rect.top)}..${Math.round(rect.bottom)}` : '');
+    await clickNode(pill);
+    const item = await until('panel lists the detected video', () => findNode((x) => x.nodeName === 'BUTTON' && (x.children || []).some((c) => c.nodeType === 3 && c.nodeValue === 'Download')), 10000).catch(() => null);
+    check('panel offers the video found on the page', !!item);
+    if (item) {
+      const before = (await app('GET', '/api/tasks')).length;
+      await clickNode(item);
+      const t = await until('clip.mp4 task from the floating button', async () => (await app('GET', '/api/tasks')).find((x) => x.url.endsWith('/clip.mp4') && x.status === 'Done'), 20000).catch(() => null);
+      check('clicking Download sends the video to the app, which finishes it', !!t && t.total === SIZE, t ? `${t.name}, ${t.total} bytes, category ${t.category}` : `tasks before ${before}`);
+    }
+  }
 
   // 2. a normal browser download (a click on a link) is taken over by the app
   if (process.env.E2E_DEBUG) await inTarget(sw.targetId, "chrome.downloads.onCreated.addListener((d) => { (globalThis.__seen ||= []).push([d.url, d.state, d.byExtensionId || '']); }); chrome.downloads.onChanged.addListener((d) => { (globalThis.__chg ||= []).push(JSON.stringify(d)); }); 1");
@@ -293,7 +337,8 @@ try {
       await sleep(1000);
     }
   }
-  check('registry entries removed', regKeys.every((k) => !regHas(k)));
+  priorHelper.forEach((v, i) => { if (v) { try { execFileSync('reg', ['add', regKeys[i], '/ve', '/t', 'REG_SZ', '/d', v, '/f'], { stdio: 'ignore' }); } catch {} } });
+  check('registry back to how it was before the run', regKeys.every((k, i) => regHas(k) === (priorHelper[i] !== null)));
   check('host manifest file removed', !existsSync(join(rel, `com.${PRODUCT}.host.json`)));
   check('temp folder removed', !existsSync(tmp));
   const bad = results.filter((r) => !r.ok).length;

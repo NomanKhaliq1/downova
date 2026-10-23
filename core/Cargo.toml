@@ -22,7 +22,7 @@ serde_json = "1.0.154"
 sha2 = "0.11.1"
 thiserror = "2.0.21"
 time = { version = "0.3.55", features = ["local-offset"] }
-tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "fs", "time", "sync", "io-util", "signal"] }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "fs", "time", "sync", "io-util", "signal", "process"] }
 
 [dev-dependencies]
 tiny_http = "0.12.0"

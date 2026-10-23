@@ -35,5 +35,18 @@
                     ],
     "host_permissions":  [
                              "\u003call_urls\u003e"
-                         ]
+                         ],
+    "content_scripts":  [
+                            {
+                                "matches":  [
+                                                "\u003call_urls\u003e"
+                                            ],
+                                "js":  [
+                                           "content.js"
+                                       ],
+                                "run_at":  "document_idle",
+                                "all_frames":  true,
+                                "match_about_blank":  false
+                            }
+                        ]
 }
