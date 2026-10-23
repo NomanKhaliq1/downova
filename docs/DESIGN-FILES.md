@@ -133,6 +133,8 @@ Branch: `design`. Files changed or added relative to `master`. The pre-existing 
 | Added | [docs/screenshots/many-light-1600.png](../docs/screenshots/many-light-1600.png) |
 | Added | [docs/screenshots/many-light-360.png](../docs/screenshots/many-light-360.png) |
 | Added | [docs/screenshots/many-light-900.png](../docs/screenshots/many-light-900.png) |
+| Added | [docs/screenshots/native-compact-dark-900x600.png](../docs/screenshots/native-compact-dark-900x600.png) |
+| Added | [docs/screenshots/native-compact-light-900x600.png](../docs/screenshots/native-compact-light-900x600.png) |
 | Added | [docs/screenshots/no-results-dark-1600.png](../docs/screenshots/no-results-dark-1600.png) |
 | Added | [docs/screenshots/no-results-dark-360.png](../docs/screenshots/no-results-dark-360.png) |
 | Added | [docs/screenshots/no-results-dark-900.png](../docs/screenshots/no-results-dark-900.png) |

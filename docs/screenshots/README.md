@@ -2,6 +2,8 @@
 
 Downova identity: [light and dark logo preview](identity-preview.png).
 
+Compact desktop previews at 900x600: [Light](native-compact-light-900x600.png) / [Dark](native-compact-dark-900x600.png). These hide the mock authoring strip to show the live window layout.
+
 Mock previews captured in Chrome. Open any image at full size. Dialogs use viewport captures; ordinary screens use full-page captures. All screens are also checked for RTL overflow.
 
 | Screen / state | Light 360 | Dark 360 | Light 900 | Dark 900 | Light 1600 | Dark 1600 |
