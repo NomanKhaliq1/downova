@@ -1,4 +1,5 @@
 import { collectFromPage, fileName, formatSize, makeFilter } from './lib.js';
+import { uiIcon } from './popup-icons.js';
 import { S } from './popup-strings.js';
 const T=S.popup;
 const $=id=>document.getElementById(id);
@@ -7,8 +8,10 @@ let tab=null,found=[],previewState=new URLSearchParams(location.search).get('sta
 const ask=msg=>mock?mockMessage(msg):chrome.runtime.sendMessage(msg);
 const report=error=>{$('message').textContent=error?.message||T.error};
 const safely=fn=>async e=>{try{await fn(e)}catch(error){report(error)}};
-const el=(tag,props={},...kids)=>{const node=document.createElement(tag);for(const [key,value] of Object.entries(props)){if(key==='dataset')Object.assign(node.dataset,value);else node[key]=value}node.append(...kids);return node};
+const el=(tag,props={},...kids)=>{const node=document.createElement(tag);for(const [key,value] of Object.entries(props)){if(key==='dataset')Object.assign(node.dataset,value);else node[key]=value}node.append(...kids);if(tag==='button')decorate(node,'download');return node};
+function decorate(node,name){const template=document.createElement('template');template.innerHTML=uiIcon(name);node.prepend(template.content)}
 document.querySelectorAll('[data-copy]').forEach(node=>node.textContent=T[node.dataset.copy]);
+for(const [id,name] of [['links','links'],['images','image'],['go','download'],['openUi','external']])decorate($(id),name);
 $('filter').placeholder=T.filter;
 for(const [value,text] of [['system',T.system],['light',T.light],['dark',T.dark]])$('theme').append(el('option',{value,textContent:text}));
 const setTheme=value=>{localStorage.setItem('theme',value);if(value==='system')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=value};

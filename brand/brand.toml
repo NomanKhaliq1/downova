@@ -1,6 +1,6 @@
 ﻿# Single place for everything that carries the product's identity.
 # Replace the values; nothing else in the code base hard-codes a name.
-name = "BRAND_NAME"
+name = "Downova"
 product_id = "brandname"          # lowercase, no spaces: folder names, registry keys, native host id
 company = "Noman Ghouri"
 homepage = "https://www.nomankhaliq.dev/"

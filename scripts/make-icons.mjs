@@ -13,14 +13,21 @@ const asset=join(root,'brand/assets'),icons=process.argv[2]||join(root,'extensio
 for(const path of [asset,icons])mkdirSync(path,{recursive:true});
 const write=(file,data)=>writeFileSync(join(root,file),data);
 const xml=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
-const path='M4 4H19V9H9V19H4Z M28 28H13V23H23V13H28Z';
-const svg=(color,wide=false)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${wide?360:32}" height="32" viewBox="0 0 ${wide?360:32} 32" role="img" aria-label="${xml(brand.name)}"><path fill="${color}" d="${path}"/>${wide?`<text x="44" y="24" font-family="Segoe UI,system-ui,sans-serif" font-size="23" font-weight="650" fill="${color}">${xml(brand.name)}</text>`:''}</svg>\n`;
+const path='M4 4H10V28H4Z M13 4H19L28 13V19L19 28H13V22H16L22 16L16 10H13Z';
+const wordmarkWidth=44+Math.ceil(brand.name.length*15);
+const svg=(color,wide=false)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${wide?wordmarkWidth:32}" height="32" viewBox="0 0 ${wide?wordmarkWidth:32} 32" role="img" aria-label="${xml(brand.name)}"><path fill="${color}" d="${path}"/>${wide?`<text x="44" y="24" font-family="Segoe UI,system-ui,sans-serif" font-size="23" font-weight="650" fill="${color}">${xml(brand.name)}</text>`:''}</svg>\n`;
 write('brand/assets/logo.svg',svg(brand.primary_color));write('brand/assets/logo-white.svg',svg('#ffffff'));write('brand/assets/logo-wide.svg',svg(brand.primary_color,true));write('brand/assets/logo-wide-white.svg',svg('#ffffff',true));write('ui/mark.svg',svg(brand.primary_color));
+write('brand/assets/identity-preview.svg',`<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360" role="img" aria-label="${xml(brand.name)} identity"><path fill="#ffffff" d="M0 0h720v180H0z"/><path fill="#10151e" d="M0 180h720v180H0z"/>${[0,180].map((y,i)=>`<g transform="translate(60 ${y+42})"><g transform="scale(3)"><path fill="${i?'#ffffff':brand.primary_color}" d="${path}"/></g><text x="132" y="65" fill="${i?'#ffffff':'#182235'}" font-family="Segoe UI,system-ui,sans-serif" font-size="52" font-weight="650" letter-spacing="-1.5">${xml(brand.name)}</text><text x="134" y="96" fill="${i?'#a3b1c7':'#58677d'}" font-family="Segoe UI,system-ui,sans-serif" font-size="13" letter-spacing="2">DOWNLOAD MANAGER</text></g>`).join('')}</svg>\n`);
 write('ui/brand.js',`// Generated from brand/brand.toml by scripts/make-icons.mjs.\nconst brand = ${JSON.stringify(brand,null,2)};\n`);
 for(const file of ['ui/brand.css','extension/popup-brand.css'])write(file,`/* Generated from brand/brand.toml. */\n:root{--brand:${brand.primary_color}}\n`);
 // Popup has its own copy of the shared translation object, so it stays self-contained.
+write('extension/popup-icons.js',readFileSync(join(root,'ui/icons.js'),'utf8').replace('const uiIcon =','export const uiIcon ='));
+const host=/export const HOST = ([^;]+);/.exec(readFileSync(join(root,'extension/brand.js'),'utf8'))[1];
+write('extension/brand.js',`// Generated from brand/brand.toml. Native-host identity is unchanged.\nexport const BRAND_NAME = ${JSON.stringify(brand.name)};\nexport const HOST = ${host};\n`);
+write('extension/_locales/en/messages.json',JSON.stringify({extName:{message:brand.name},extDesc:{message:`Fast download manager for ${brand.name}: catches downloads, finds videos and grabs page links.`}},null,2)+'\n');
 write('extension/popup-strings.js',readFileSync(join(root,'ui/strings.js'),'utf8').replace('const S =','export const S ='));
-const mark=(x,y)=>(x>=4&&x<19&&y>=4&&y<9)||(x>=4&&x<9&&y>=4&&y<19)||(x>=13&&x<28&&y>=23&&y<28)||(x>=23&&x<28&&y>=13&&y<28);
+const outline=[[13,4],[19,4],[28,13],[28,19],[19,28],[13,28],[13,22],[16,22],[22,16],[16,10],[13,10]];
+const mark=(x,y)=>{if(x>=4&&x<10&&y>=4&&y<28)return true;let inside=false;for(let i=0,j=outline.length-1;i<outline.length;j=i++){const [ax,ay]=outline[i],[bx,by]=outline[j];if((ay>y)!==(by>y)&&x<(bx-ax)*(y-ay)/(by-ay)+ax)inside=!inside}return inside};
 function rgba(size,mode='app'){
  const out=Buffer.alloc(size*size*4);const aa=4;
  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
