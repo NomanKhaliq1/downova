@@ -13,13 +13,13 @@ The Downova identity is a split, faceted D: a stable vertical spine and an angul
 | Token | Light | Dark |
 | --- | --- | --- |
 | `--brand` | Generated `primary_color` | Generated `primary_color` |
-| `--bg` | `#f3f3f3` | `#202020` |
-| `--panel` | `#ffffff` | `#252525` |
-| `--text` | `#202020` | `#eeeeee` |
-| `--muted` | `#5b5b5b` | `#b8b8b8` |
-| `--line` | `#d8d8d8` | `#414141` |
-| `--control` | `#888888` | `#808080` |
-| `--soft` | `#f1f1f1` | `#333333` |
+| `--bg` | `#f5f6f8` | `#15191f` |
+| `--panel` | `#ffffff` | `#1c222b` |
+| `--text` | `#242b36` | `#edf1f7` |
+| `--muted` | `#5d6878` | `#aab6c8` |
+| `--line` | `#dfe4eb` | `#353f4d` |
+| `--control` | `#8390a3` | `#75849a` |
+| `--soft` | `#f3f5f8` | `#252d39` |
 | `--accent` | Brand colour | 45% brand mixed with white |
 | `--good` | `#137349` | `#78d9ae` |
 | `--bad` | `#b32539` | `#ff9cac` |
@@ -29,9 +29,9 @@ Primary buttons use white on the brand colour (5.17:1). Manager controls use neu
 ## Typography, spacing and surfaces
 
 - System stack: Segoe UI, system-ui, sans-serif. No downloaded fonts.
-- Type: 15 px page title, 14 px section title, 12 px base/forms/table, 10–11 px compact metadata. Data rows use regular weight; headings use 600. Desktop rows are 31 px high.
+- Type: 18 px page title, 16 px section title, 13 px base/file names and 12 px forms/table metrics, 10–11 px compact metadata. Data rows use regular weight; headings use 600. Desktop rows are 36 px high.
 - Spacing: 4 px base, 4–8 px toolbar/table padding and 10–14 px form gutters. The table fills the remaining window height; there are no summary cards above it.
-- Radius: 2 px fields/panels, 3 px buttons/dialogs; the main table has square edges.
+- Radius: 6 px fields/buttons, 8 px transfer surface, 10 px dialogs. Subtle horizontal dividers replace vertical table grid lines.
 - Elevation: flat work surfaces and 1 px dividers. Only dialogs, menus and toasts have a small 3 px / 12 px shadow; the backdrop has no blur.
 
 ## Components and interaction
@@ -82,4 +82,10 @@ The supplied tray/app ICOs are ready for native packaging. The current dmd tray 
 
 ## Desktop density pass
 
-The main window follows an Explorer/mail-client layout: a 160–176 px navigation tree, a compact connection/theme strip, a small view title, an icon-and-label command toolbar, one data table, and a bottom status bar. Transfer speed stays in the existing status bar. Main/history tables keep real column headers and native horizontal scrolling at narrow widths instead of becoming cards. Secondary date/category columns are hidden below 1100 px; name, size, progress, speed, ETA and status remain in the table. No API, event, selection, sorting or download action changed. The browser regression asserts row height, table viewport height, the absence of summary cards, and semantic table layout at 360 px.
+The main window follows an Explorer/mail-client layout: a 176–188 px navigation tree, a compact connection/theme strip, a compact view title with search, an icon-and-label command toolbar, one data table, and a bottom status bar. Transfer speed stays in the existing status bar. Main/history tables keep real column headers and native horizontal scrolling at narrow widths instead of becoming cards. Secondary date/category columns are hidden below 1100 px; name, size, progress, speed, ETA and status remain in the table. No API, event, selection, sorting or download action changed. The browser regression asserts row height, table viewport height, the absence of summary cards, and semantic table layout at 360 px.
+
+## Modern desktop surfaces and icon policy
+
+The table remains the main element, without summary cards. Slightly larger file names, a compact single-row command bar at 900 px, inset work surface, softer control corners and neutral slate backgrounds give the manager a modern desktop appearance. Search sits beside the view title. There are no vertical spreadsheet grid lines or heavy card shadows.
+
+Every application pictogram is an SVG path or SVG geometric shape. Dialog close and search clear are explicit accessible SVG buttons, never X/Unicode character substitutions. The search clear button sends the existing input event, preserving filtering and API queries. Browser-native search cancel glyphs are hidden. Select chevrons, disclosure arrows, checked/indeterminate boxes and the popup capture switch use embedded local SVG. Cancel remains a text label without a decorative cross. The regression checks assert empty text inside both close buttons, SVG path presence and search clearing, and reject icon glyph substitutions in manager/popup preview text.

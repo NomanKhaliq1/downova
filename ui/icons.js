@@ -14,9 +14,9 @@ const uiIcon = (name='file') => {
   video:'M3 5h18v14H3z m7 4 5 3-5 3z',image:'M3 3h18v18H3z m0 14 6-6 4 4 3-3 5 5 M15 7h.01',
   program:'M3 4h18v16H3z M3 9h18 m-11 3-3 2 3 2m4-4 3 2-3 2',
   plus:'M12 4v16M4 12h16',trash:'M3 6h18M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7m4-7v7',
-  close:'m6 6 12 12M6 18 18 6',up:'m6 14 6-6 6 6',down:'m6 10 6 6 6-6',
+  close:'m7 7 10 10M17 7 7 17',up:'m6 14 6-6 6 6',down:'m6 10 6 6 6-6',
   save:'M4 3h13l3 3v15H4z M8 3v6h8V3 M8 21v-8h8v8',external:'M14 3h7v7 M21 3l-11 11 M10 3H3v18h18v-7',
   refresh:'M20 10a8 8 0 1 0 0 5 M20 4v6h-6',copy:'M9 9h12v12H9z M5 15H3V3h12v2',search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14 m5 12 6 6'
  };
- return `<svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${paths[name]||paths.file}"/></svg>`;
+ return `<svg data-icon="${name}" class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${paths[name]||paths.file}"/></svg>`;
 };
