@@ -1,0 +1,348 @@
+{
+  "date": "2026-10-24",
+  "dataDirectory": "C:\\Users\\PMLS\\AppData\\Local\\Temp\\dm-design\\data",
+  "downloadDirectory": "C:\\Users\\PMLS\\AppData\\Local\\Temp\\dm-design\\downloads",
+  "requests": [
+    {
+      "url": "http://127.0.0.1:62880/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/brand.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/app.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/brand.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/strings.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/helpers.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mock.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/app.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mark.svg",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/events?token=REDACTED",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mark.svg",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mark.svg",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/5",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/5/resume",
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/5",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/5",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/5",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/5",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/pause-all",
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/resume-all",
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "PUT"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues/Design%20check",
+      "method": "PUT"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues/Design%20check",
+      "method": "DELETE"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/5?files=false",
+      "method": "DELETE"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/6",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/6",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/6",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/6",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mark.svg",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/brand.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/app.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/brand.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/strings.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/helpers.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mock.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/app.js",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/ping",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/settings",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/queues",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mark.svg",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/events?token=REDACTED",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mark.svg",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/6/open",
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/6/open",
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:62880/api/tasks/6?files=true",
+      "method": "DELETE"
+    },
+    {
+      "url": "http://127.0.0.1:62880/mark.svg",
+      "method": "GET"
+    }
+  ],
+  "errors": [],
+  "passed": [
+    "ping",
+    "token session",
+    "add paused",
+    "resume",
+    "task events",
+    "progress events",
+    "pause all",
+    "resume all",
+    "settings",
+    "queues create/delete",
+    "export",
+    "remove keeps file",
+    "remove deletes file",
+    "open file/folder payload (intercepted)"
+  ]
+}
