@@ -99,6 +99,16 @@ fn ensure_running(cfg: &Config) -> Option<(u16, String)> {
     None
 }
 
+/// Ask a running app to save and exit (used by the installer before upgrading or removing). True when it is gone.
+pub fn quit_app(cfg: &Config) -> bool {
+    let Some((port, token)) = running(cfg) else { return true };
+    let _ = http(port, Some(&token), "POST", "/api/quit", Some("{}"));
+    (0..80).any(|_| {
+        std::thread::sleep(Duration::from_millis(150));
+        running(cfg).is_none()
+    })
+}
+
 /// The only calls the extension may make. Everything else is refused.
 fn allowed(method: &str, path: &str) -> bool {
     matches!((method, path), ("GET", "/api/ping") | ("GET", "/api/settings") | ("POST", "/api/capture") | ("POST", "/api/tasks"))

@@ -1,5 +1,5 @@
 //! `dmhost` (run by the browser) and `dmhost install|uninstall` (run by the installer or by hand).
-use dm_host::{serve, Config};
+use dm_host::{quit_app, serve, Config};
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::process::Command;
@@ -63,7 +63,16 @@ fn main() {
     let exe = std::env::current_exe().expect("own path");
     let dir = exe.parent().map(PathBuf::from).unwrap_or_default();
 
+    let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
+    let cfg = Config {
+        data_dir: std::env::var_os("DM_DATA_DIR").map(PathBuf::from).unwrap_or_else(|| appdata.join(&brand.product_id)),
+        app_path: dir.join("dmd.exe"),
+        product_id: brand.product_id.clone(),
+        start_wait: Duration::from_secs(6),
+    };
+
     match std::env::args().nth(1).as_deref() {
+        Some("quit") => std::process::exit(if quit_app(&cfg) { 0 } else { 1 }),
         Some("install") => match install(&brand, &dir) {
             Ok(()) => println!("registered for Chrome, Edge and Brave"),
             Err(e) => {
@@ -73,13 +82,6 @@ fn main() {
         },
         Some("uninstall") => uninstall(&brand, &dir),
         _ => {
-            let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
-            let cfg = Config {
-                data_dir: std::env::var_os("DM_DATA_DIR").map(PathBuf::from).unwrap_or_else(|| appdata.join(&brand.product_id)),
-                app_path: dir.join("dmd.exe"),
-                product_id: brand.product_id,
-                start_wait: Duration::from_secs(6),
-            };
             if serve(&cfg, std::io::stdin().lock(), std::io::stdout().lock()).is_err() {
                 std::process::exit(1);
             }
