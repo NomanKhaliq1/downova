@@ -43,6 +43,8 @@ pub struct Settings {
     /// Offer to download links the user copies (the UI asks first; nothing is added silently).
     pub clipboard_monitor: bool,
     pub start_with_windows: bool,
+    /// ffmpeg for merging video and audio of streams. None = look beside the app and on PATH.
+    pub ffmpeg_path: Option<PathBuf>,
 }
 
 fn cat(name: &str, exts: &str) -> Category {
@@ -63,7 +65,7 @@ impl Settings {
                 cat("Compressed", "zip rar 7z tar gz tgz bz2 xz zst cab"),
                 cat("Documents", "pdf doc docx xls xlsx ppt pptx txt rtf odt csv epub md"),
                 cat("Music", "mp3 wav flac aac m4a ogg opus wma"),
-                cat("Video", "mp4 mkv avi mov wmv flv webm m4v mpg mpeg 3gp"),
+                cat("Video", "mp4 mkv avi mov wmv flv webm m4v mpg mpeg 3gp m3u8 mpd"),
                 cat("Images", "jpg jpeg png gif webp bmp svg ico tiff heic"),
                 cat("Programs", "exe msi msix apk dmg deb rpm appimage iso"),
             ],
@@ -78,6 +80,7 @@ impl Settings {
             on_complete_command: None,
             clipboard_monitor: false,
             start_with_windows: false,
+            ffmpeg_path: None,
         }
     }
 

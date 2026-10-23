@@ -35,6 +35,10 @@ pub struct TaskOpts {
     pub headers: Vec<(String, String)>,
     pub user_agent: Option<String>,
     pub sha256: Option<String>,
+    /// File name to use for streams and other links whose own name is useless (the page title, for example).
+    pub filename: Option<String>,
+    /// Streams: pick the best picture up to this height.
+    pub max_height: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -51,6 +55,9 @@ pub struct Task {
     pub total: u64,
     pub downloaded: u64,
     pub error: Option<String>,
+    /// A remark from the downloader (for example: video and audio were saved as two files).
+    #[serde(default)]
+    pub note: String,
     pub added: u64,
     pub finished: Option<u64>,
     pub priority: i32,
@@ -309,6 +316,7 @@ impl Manager {
                     total: 0,
                     downloaded: 0,
                     error: None,
+                    note: String::new(),
                     added: now_secs(),
                     finished: None,
                     priority: 0,
@@ -538,9 +546,8 @@ impl Manager {
                 if let Some(t) = s.tasks.get_mut(id) {
                     t.downloaded = d;
                     t.total = total;
-                    if t.name.is_empty() {
-                        t.name = r.ctl.progress.name.lock().unwrap().clone();
-                    }
+                    t.name = r.ctl.progress.name.lock().unwrap().clone();
+                    t.note = r.ctl.progress.note.lock().unwrap().clone();
                 }
             }
 
@@ -599,6 +606,9 @@ impl Manager {
             proxy: s.proxy.clone(),
             speed_limit: t.speed_limit,
             sha256: t.sha256.clone(),
+            file_name: t.filename.clone(),
+            max_height: t.max_height,
+            ffmpeg_path: s.ffmpeg_path.clone(),
             ..Options::default()
         }
     }
@@ -622,6 +632,7 @@ impl Manager {
                         t.total = std::fs::metadata(p).map_or(t.total, |m| m.len());
                         t.downloaded = t.total;
                         t.error = None;
+                        t.note = ctl.progress.note.lock().unwrap().clone();
                         t.finished = Some(now_secs());
                         completed = true;
                         events.push(Event::Finished(id));

@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use crate::util::{content_disposition_name, sanitize, url_name};
-use reqwest::header::{HeaderMap, CONTENT_DISPOSITION, CONTENT_RANGE, ETAG, LAST_MODIFIED, RANGE};
+use reqwest::header::{HeaderMap, CONTENT_DISPOSITION, CONTENT_RANGE, CONTENT_TYPE, ETAG, LAST_MODIFIED, RANGE};
 use reqwest::{Client, StatusCode};
 
 #[derive(Debug, Clone)]
@@ -12,6 +12,7 @@ pub struct Probe {
     pub etag: Option<String>,
     pub last_modified: Option<String>,
     pub filename: String,
+    pub content_type: Option<String>,
 }
 
 impl Probe {
@@ -74,6 +75,7 @@ pub async fn probe(client: &Client, url: &str) -> Result<Probe> {
         etag: header(&h, ETAG),
         last_modified: header(&h, LAST_MODIFIED),
         filename: sanitize(&filename),
+        content_type: header(&h, CONTENT_TYPE),
     })
 }
 

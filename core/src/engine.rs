@@ -33,6 +33,12 @@ pub struct Options {
     pub sha256: Option<String>,
     /// A segment is only split in two if both halves stay at least this big.
     pub min_split: u64,
+    /// Streams (HLS/DASH): highest picture height wanted; None = best available.
+    pub max_height: Option<u32>,
+    /// Where ffmpeg is (merges separate video/audio, converts .ts to .mp4). None = look beside the app and on PATH.
+    pub ffmpeg_path: Option<PathBuf>,
+    /// Name for the saved file when the link itself has no useful one (a page title, for example).
+    pub file_name: Option<String>,
 }
 
 impl Default for Options {
@@ -49,6 +55,9 @@ impl Default for Options {
             save_interval: Duration::from_secs(2),
             sha256: None,
             min_split: 1 << 20,
+            max_height: None,
+            ffmpeg_path: None,
+            file_name: None,
         }
     }
 }
@@ -59,6 +68,8 @@ pub struct Progress {
     pub total: AtomicU64,
     /// File name chosen for this download (empty until the probe is done).
     pub name: Mutex<String>,
+    /// A remark for the user (for example: video and audio were saved separately).
+    pub note: Mutex<String>,
 }
 
 /// Handles the caller keeps to watch, throttle or cancel a running download.
@@ -86,7 +97,7 @@ impl Control {
         self
     }
 
-    async fn throttle(&self, n: u64) {
+    pub(crate) async fn throttle(&self, n: u64) {
         self.limiter.take(n).await;
         if let Some(g) = &self.global {
             g.take(n).await;
@@ -123,7 +134,7 @@ fn build_client(o: &Options) -> Result<Client> {
     Ok(b.build()?)
 }
 
-fn backoff(fails: u32) -> Duration {
+pub(crate) fn backoff(fails: u32) -> Duration {
     Duration::from_millis((500u64 << fails.min(6)).min(30_000))
 }
 
@@ -180,6 +191,10 @@ pub async fn download(url: &str, dir: &Path, o: &Options, ctl: &Control) -> Resu
     let client = build_client(o)?;
     let p = probe(&client, url).await?;
     ctl.progress.total.store(p.total.unwrap_or(0), Relaxed);
+
+    if crate::stream::is_manifest(&p) {
+        return crate::stream::run(&client, url, dir, o, ctl).await;
+    }
 
     let name = pick_name(dir, &p.filename, url);
     *ctl.progress.name.lock().unwrap() = name.clone();

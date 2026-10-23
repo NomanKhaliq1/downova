@@ -144,7 +144,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 // ---- adding on request (explicit user actions skip the exclusion list) ----
 
-async function addUrls(urls, referer) {
+async function addUrls(urls, referer, filename) {
   const first = urls.find(isCapturableUrl);
   const cookies = first ? await chrome.cookies.getAll({ url: first }).catch(() => []) : [];
   // shortcut: one cookie header for the whole batch (taken from the first link); fine for one site, per-link cookies if needed
@@ -153,6 +153,7 @@ async function addUrls(urls, referer) {
     referer: referer || undefined,
     cookie: cookieHeader(cookies) || undefined,
     user_agent: navigator.userAgent,
+    filename: urls.length === 1 ? filename || undefined : undefined, // a page title only makes sense for one link
   });
 }
 
@@ -172,7 +173,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
         return reply({ media: (await chrome.storage.session.get(k))[k] || [] });
       }
       case 'add':
-        return reply(await addUrls(msg.urls, msg.referer));
+        return reply(await addUrls(msg.urls, msg.referer, msg.filename));
       case 'open_ui':
         return reply(await call({ cmd: 'open_ui' }));
       default:

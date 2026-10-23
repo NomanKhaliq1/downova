@@ -163,6 +163,10 @@ struct AddReq {
     sha256: Option<String>,
     connections: Option<usize>,
     speed_limit: Option<u64>,
+    /// Name to save under (streams and links without a useful name).
+    filename: Option<String>,
+    /// Streams: best picture up to this height.
+    max_height: Option<u32>,
 }
 
 impl AddReq {
@@ -180,6 +184,8 @@ impl AddReq {
                 headers: self.headers.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
                 user_agent: self.user_agent.clone(),
                 sha256: self.sha256.clone(),
+                filename: self.filename.clone(),
+                max_height: self.max_height,
             },
         }
     }

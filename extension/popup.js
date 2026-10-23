@@ -33,7 +33,7 @@ async function showMedia() {
   $('media').replaceChildren(
     ...media.map((m) =>
       el('div', { className: 'row' }, el('span', { className: 'muted', textContent: m.kind }), el('span', { className: 'name', title: m.url, textContent: m.name }), el('span', { className: 'muted', textContent: formatSize(m.size) }),
-        el('button', { textContent: 'Download', onclick: async (e) => { e.target.disabled = true; await ask({ type: 'add', urls: [m.url], referer: tab.url }); e.target.textContent = 'Added'; } })),
+        el('button', { textContent: 'Download', onclick: async (e) => { e.target.disabled = true; await ask({ type: 'add', urls: [m.url], referer: tab.url, filename: tab.title }); e.target.textContent = 'Added'; } })),
     ),
   );
 }

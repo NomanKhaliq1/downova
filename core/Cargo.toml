@@ -11,8 +11,11 @@ name = "dmcli"
 path = "src/bin/dmcli.rs"
 
 [dependencies]
+aes = "0.9.3"
+cbc = { version = "0.2.1", features = ["alloc"] }
 fs4 = "1.1.0"
 futures-util = "0.3.34"
+quick-xml = "0.42.0"
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "stream", "http2", "system-proxy"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"

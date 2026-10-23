@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::atomic::Ordering::Relaxed;
 use std::time::{Duration, Instant};
 
-const USAGE: &str = "usage: dmcli <url> [-d dir] [-c connections] [--limit KB/s] [--sha256 hex] [-H \"Name: value\"] [--referer url] [--cookie text] [--proxy url]";
+const USAGE: &str = "usage: dmcli <url> [-d dir] [-c connections] [--limit KB/s] [--sha256 hex] [-H \"Name: value\"] [--referer url] [--cookie text] [--proxy url] [--max-height 720] [--name file-name] [--ffmpeg path]";
 
 fn parse() -> Result<(String, PathBuf, Options), String> {
     let mut args = std::env::args().skip(1);
@@ -20,6 +20,9 @@ fn parse() -> Result<(String, PathBuf, Options), String> {
             "--referer" => o.referer = Some(val("--referer")?),
             "--cookie" => o.cookie = Some(val("--cookie")?),
             "--proxy" => o.proxy = Some(val("--proxy")?),
+            "--max-height" => o.max_height = Some(val("--max-height")?.parse().map_err(|_| "--max-height needs a number")?),
+            "--name" => o.file_name = Some(val("--name")?),
+            "--ffmpeg" => o.ffmpeg_path = Some(val("--ffmpeg")?.into()),
             "-H" => {
                 let h = val("-H")?;
                 let (k, v) = h.split_once(':').ok_or("-H needs \"Name: value\"")?;

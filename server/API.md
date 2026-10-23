@@ -26,13 +26,13 @@ The page must read the token from `location.hash` and keep it in `sessionStorage
   "dir": "C:\\…\\Compressed", "category": "Compressed", "queue": "Main",
   "status": "Queued | Downloading | Paused | Done | Failed",
   "total": 1048576, "downloaded": 524288, "speed": 2097152, "eta_secs": 3,
-  "error": null, "added": 1792780170, "finished": null, "priority": 0,
+  "error": null, "note": "", "added": 1792780170, "finished": null, "priority": 0,
   "opts": { "connections": null, "speed_limit": null, "referer": null, "cookie": null,
-            "headers": [], "user_agent": null, "sha256": null }
+            "headers": [], "user_agent": null, "sha256": null, "filename": null, "max_height": null }
 }
 ```
 
-`name` is empty until the download has started. `speed` is bytes/second, `eta_secs` may be null. Times are Unix seconds.
+`name` is empty until the download has started. `note` is a remark from the downloader to show the user (for example that a stream's video and audio were saved as two files because ffmpeg is missing). `speed` is bytes/second, `eta_secs` may be null. Times are Unix seconds.
 
 ## Endpoints
 
@@ -40,7 +40,7 @@ The page must read the token from `location.hash` and keep it in `sessionStorage
 |---|---|---|
 | `GET /api/ping` | none (no token) | `{"app","version"}` |
 | `GET /api/tasks` | `?status=Done&category=Video&queue=Main&q=text` (all optional; `q` matches name or URL) | array of task objects. History = `status=Done` |
-| `POST /api/tasks` | `{urls, queue?, dir?, paused?, force?, referer?, cookie?, user_agent?, headers?{}, sha256?, connections?, speed_limit?}` | `{added:[ids], duplicates:[ids], invalid:[text]}`. `urls` is text with one link or pattern per line; `f[001-050].jpg`, `[1-10:2]`, `[a-e]` expand; lines starting with `#` are ignored |
+| `POST /api/tasks` | `{urls, queue?, dir?, paused?, force?, referer?, cookie?, user_agent?, headers?{}, sha256?, connections?, speed_limit?, filename?, max_height?}` (`filename` names the saved file, useful for streams; `max_height` caps the picture height of HLS/DASH streams) | `{added:[ids], duplicates:[ids], invalid:[text]}`. `urls` is text with one link or pattern per line; `f[001-050].jpg`, `[1-10:2]`, `[a-e]` expand; lines starting with `#` are ignored |
 | `GET /api/tasks/{id}` | | task object |
 | `DELETE /api/tasks/{id}?files=true` | `files` also deletes the file or partial file | `{ok}` |
 | `POST /api/tasks/{id}/pause` | `{}` | `{ok}` |
@@ -79,7 +79,7 @@ The page must read the token from `location.hash` and keep it in `sessionStorage
   "exclusions": { "extensions": ["torrent"], "sites": ["bank.com"] },
   "connections": 8, "max_simultaneous": 3, "speed_limit": null,
   "user_agent": null, "proxy": null, "on_complete_command": null,
-  "clipboard_monitor": false, "start_with_windows": false }
+  "clipboard_monitor": false, "start_with_windows": false, "ffmpeg_path": null }
 ```
 
 `speed_limit` is bytes/second for the whole app (null = unlimited). `folder` values are relative to `download_root` unless absolute. `on_complete_command` runs after each finished download, `{path}` is replaced by the quoted file path.
@@ -92,6 +92,10 @@ The page must read the token from `location.hash` and keep it in `sessionStorage
 | `task` | `{kind:"added"|"changed"|"removed"|"finished", id}`; re-fetch `GET /api/tasks/{id}` on added/changed/finished |
 | `drained` | `{queue, action}` a queue finished everything |
 | `clipboard` | `{url}` the user copied a link and `clipboard_monitor` is on; ask before adding |
+
+## Streams (HLS and DASH)
+
+Links to a `.m3u8` or `.mpd` manifest are downloaded like any other link: the best quality (or the best up to `max_height`) is chosen, the pieces are fetched in parallel, AES-128 encryption is handled, and a stopped download resumes. Live streams and DRM-protected streams are refused with a clear error in `error`. Progress is in bytes; `total` starts as an estimate and settles on the real size. When a stream has separate video and audio they are merged with ffmpeg if it is found (`ffmpeg_path` setting, next to the app, or on PATH); otherwise two files are kept and `note` says so.
 
 ## Not covered yet
 

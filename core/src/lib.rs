@@ -1,7 +1,9 @@
 //! Download engine: probe, segmented download, resume, retry, speed limit.
 //! On top of it: queues, scheduler, categories, history.
+pub mod dash;
 pub mod engine;
 pub mod error;
+pub mod hls;
 pub mod limiter;
 pub mod manager;
 pub mod pattern;
@@ -10,6 +12,7 @@ pub mod probe;
 pub mod rules;
 pub mod schedule;
 pub mod state;
+pub mod stream;
 pub mod util;
 
 pub use engine::{download, Control, Options, Progress};
