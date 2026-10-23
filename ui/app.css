@@ -12,3 +12,10 @@ body{margin:0;background:var(--bg);color:var(--text)}button,input,select,textare
 
 @media(min-width:701px){.shell{height:100dvh;min-height:0}.sidebar{overflow:auto}.workspace{min-height:0;overflow:hidden}.content{overflow:auto;min-height:0}.tablewrap{max-height:max(210px,calc(100dvh - 390px))}.tasks thead{position:sticky;top:0;z-index:1}}
 .mobile-filter{display:none}@media(max-width:700px){.tablewrap{max-height:600px}.mobile-filter{display:block;max-width:100%;font-size:11px}.toolbar .mobile-filter{flex:1}}
+.nav button{font-size:13px;padding-inline:8px}.nav .count{flex-shrink:0}
+@media(max-width:700px){.sidebar .nav button{width:auto;white-space:nowrap}.top-actions{flex-wrap:nowrap}.top-actions .check{font-size:0}.top-actions select{font-size:11px}.connection{font-size:11px}}
+:root{--control:#7b879c}:root[data-theme=dark]{--control:#697b96}@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--control:#697b96}}input,select,textarea{border-color:var(--control)}
+dialog[open]{display:flex;flex-direction:column}.dialog-head,.dialog-foot{flex-shrink:0}.dialog-body{overflow:auto;min-height:0}
+.stat strong,.detailmetrics strong,[data-speed],[data-eta],.sizecol,.datecol,#total-speed,.meter span{direction:ltr;unicode-bidi:isolate;text-align:match-parent}
+input[name=download_root],input[name=welcome_root],input[name=dir],input[name=proxy],input[name=ffmpeg_path],input[name=referer],input[name=sha256],textarea[name=urls]{direction:ltr;text-align:start}
+@media(max-width:700px){.toolbar .mobile-filter{flex-basis:calc(50% - 4px);min-width:120px}}
