@@ -1,0 +1,24 @@
+[package]
+name = "dm-core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "dm_core"
+
+[[bin]]
+name = "dmcli"
+path = "src/bin/dmcli.rs"
+
+[dependencies]
+fs4 = "1.1.0"
+futures-util = "0.3.34"
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "stream", "http2", "system-proxy"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "fs", "time", "sync", "io-util", "signal"] }
+
+[dev-dependencies]
+tiny_http = "0.12.0"

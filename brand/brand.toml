@@ -1,0 +1,10 @@
+# Single place for everything that carries the product's identity.
+# Replace the values; nothing else in the code base hard-codes a name.
+name = "BRAND_NAME"
+product_id = "brandname"          # lowercase, no spaces: folder names, registry keys, native host id
+company = "Noman Ghouri"
+homepage = "https://www.nomankhaliq.dev/"
+primary_color = "#2563eb"
+logo = "assets/logo.svg"
+tray_icon = "assets/tray.ico"
+user_agent_suffix = ""            # appended to the default User-Agent when empty means none
