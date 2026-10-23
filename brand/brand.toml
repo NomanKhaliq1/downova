@@ -1,7 +1,7 @@
-﻿# Single place for everything that carries the product's identity.
+# Single place for everything that carries the product's identity.
 # Replace the values; nothing else in the code base hard-codes a name.
 name = "Downova"
-product_id = "brandname"          # lowercase, no spaces: folder names, registry keys, native host id
+product_id = "downova"          # lowercase, no spaces: folder names, registry keys, native host id
 company = "Noman Ghouri"
 homepage = "https://www.nomankhaliq.dev/"
 primary_color = "#2563eb"
@@ -10,4 +10,7 @@ tray_icon = "assets/tray.ico"
 user_agent_suffix = ""            # appended to the default User-Agent when empty means none
 # Chrome extension IDs allowed to talk to the native host (the unpacked/enterprise build uses the one derived from the manifest key).
 extension_ids = ["afiiigijbfikndgkkodnpdipheoijcoj"]
-
+# Identifies this product to Windows Installer/Inno Setup for upgrades and uninstall. Never change it after the first release.
+app_guid = "E2BA75E2-5A93-4A8E-9107-7E15450E4DA6"
+# Chrome Web Store page of the extension (shown by the installer when set).
+store_url = ""

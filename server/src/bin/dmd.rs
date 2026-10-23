@@ -58,33 +58,39 @@ fn find_ui_dir() -> PathBuf {
     std::env::var_os("DM_UI_DIR").map(PathBuf::from).into_iter().chain(beside).chain(dev).find(|p| p.join("index.html").exists()).unwrap_or_else(|| PathBuf::from("ui"))
 }
 
-/// A simple tray icon drawn in code from the brand colour; replaced by brand/assets/tray.ico later.
+/// The brand mark (two interlocking corner brackets, same geometry as brand/assets/logo.svg) on a rounded tile
+/// in the brand colour, drawn in code so the tray icon always matches brand.toml.
 fn tray_icon(hex: &str) -> Icon {
     let v = u32::from_str_radix(hex.trim_start_matches('#'), 16).unwrap_or(0x2563eb);
-    let (r, g, b) = ((v >> 16) as u8, (v >> 8) as u8, v as u8);
+    let rgb = [(v >> 16) as u8, (v >> 8) as u8, v as u8];
+    let mark = |x: f32, y: f32| (4.0..19.0).contains(&x) && (4.0..9.0).contains(&y) || (4.0..9.0).contains(&x) && (4.0..19.0).contains(&y) || (13.0..28.0).contains(&x) && (23.0..28.0).contains(&y) || (23.0..28.0).contains(&x) && (13.0..28.0).contains(&y);
     let n = 32usize;
+    let aa = 3; // 3x3 samples per pixel for smooth edges
     let mut px = vec![0u8; n * n * 4];
     for y in 0..n {
         for x in 0..n {
-            let (fx, fy) = (x as f32 + 0.5, y as f32 + 0.5);
-            // rounded square
-            let (dx, dy) = ((fx - 16.0).abs() - 10.0, (fy - 16.0).abs() - 10.0);
-            let inside = dx.max(0.0).hypot(dy.max(0.0)) <= 6.0 && dx.max(dy) <= 6.0;
-            if !inside {
-                continue;
+            let mut sum = [0f32; 4];
+            for sy in 0..aa {
+                for sx in 0..aa {
+                    let fx = (x as f32 + (sx as f32 + 0.5) / aa as f32) / n as f32 * 32.0;
+                    let fy = (y as f32 + (sy as f32 + 0.5) / aa as f32) / n as f32 * 32.0;
+                    let (dx, dy) = (((fx - 16.0).abs() - 9.0).max(0.0), ((fy - 16.0).abs() - 9.0).max(0.0));
+                    if dx * dx + dy * dy < 36.0 {
+                        let c = if mark(fx, fy) { [255.0; 3] } else { [rgb[0] as f32, rgb[1] as f32, rgb[2] as f32] };
+                        sum = [sum[0] + c[0], sum[1] + c[1], sum[2] + c[2], sum[3] + 255.0];
+                    }
+                }
             }
-            // white down-arrow with a base line
-            let shaft = (14.0..18.0).contains(&fx) && (7.0..18.0).contains(&fy);
-            let head = (15.0..=25.0).contains(&fy) && (fx - 16.0).abs() <= (25.0 - fy) * 0.9 + 0.5 && fy >= 15.0;
-            let base = (8.0..24.0).contains(&fx) && (26.0..28.5).contains(&fy);
-            let white = shaft || head || base;
             let i = (y * n + x) * 4;
-            px[i..i + 4].copy_from_slice(&if white { [255, 255, 255, 255] } else { [r, g, b, 255] });
+            let covered = sum[3] / 255.0;
+            if covered > 0.0 {
+                px[i..i + 3].iter_mut().zip(&sum[..3]).for_each(|(o, s)| *o = (s / covered) as u8);
+                px[i + 3] = (sum[3] / (aa * aa) as f32) as u8;
+            }
         }
     }
     Icon::from_rgba(px, n as u32, n as u32).expect("valid icon buffer")
 }
-
 fn main() {
     let brand: Brand = toml::from_str(include_str!("../../../brand/brand.toml")).expect("brand/brand.toml");
     let background = std::env::args().any(|a| a == "--background");
