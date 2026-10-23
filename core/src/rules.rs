@@ -40,6 +40,9 @@ pub struct Settings {
     pub proxy: Option<String>,
     /// Run after each finished download; `{path}` is replaced by the quoted file path (virus scan, move, ...).
     pub on_complete_command: Option<String>,
+    /// Offer to download links the user copies (the UI asks first; nothing is added silently).
+    pub clipboard_monitor: bool,
+    pub start_with_windows: bool,
 }
 
 fn cat(name: &str, exts: &str) -> Category {
@@ -73,6 +76,8 @@ impl Settings {
             user_agent: None,
             proxy: None,
             on_complete_command: None,
+            clipboard_monitor: false,
+            start_with_windows: false,
         }
     }
 

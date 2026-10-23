@@ -103,7 +103,7 @@ pub struct AddOpts {
     pub task: TaskOpts,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize)]
 pub struct BatchResult {
     pub added: Vec<u64>,
     pub duplicates: Vec<u64>,

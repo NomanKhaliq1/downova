@@ -14,6 +14,6 @@ pub mod util;
 
 pub use engine::{download, Control, Options, Progress};
 pub use error::{Error, Result};
-pub use manager::{AddOpts, Event, Filter, Manager, Queue, Status, Task, TaskOpts, TaskView, MAIN_QUEUE};
+pub use manager::{AddOpts, BatchResult, Event, Filter, Manager, Queue, Status, Task, TaskOpts, TaskView, MAIN_QUEUE};
 pub use rules::Settings;
 pub use schedule::{FinishAction, Schedule};
