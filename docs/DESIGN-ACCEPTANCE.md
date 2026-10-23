@@ -30,4 +30,8 @@ Native tray rendering still draws the old arrow in protected `server/src/bin/dmd
 
 ## Compact desktop presentation
 
-Summary cards and the marketing subtitle were removed from the transfer view. The toolbar uses small SVG icons with labels; the table fills the workspace with 31 px rows, sticky column headers and restrained neutral colours. Status labels and file icons are flat. Corners are 2–3 px, large shadows/backdrop blur are removed, and speed remains in the bottom status bar. Browser assertions verify 200 rows, <=34 px row height, >=500 px table viewport at 900x900, and semantic table headers at 360 px. Existing actions, selection, sorting and API/event calls remain unchanged.
+Summary cards and the marketing subtitle were removed from the transfer view. The toolbar uses small SVG icons with labels; the table fills the workspace with 36 px rows, sticky column headers and restrained neutral colours. Status labels and file icons are flat. Corners are 6–10 px, large shadows/backdrop blur are removed, and speed remains in the bottom status bar. Browser assertions verify 200 rows, <=38 px row height, >=500 px table viewport at 900x900, and semantic table headers at 360 px. Existing actions, selection, sorting and API/event calls remain unchanged.
+
+## SVG-only controls and modern surfaces
+
+The follow-up removes the legacy grid appearance while retaining the data table and compact layout. Dialog close, search clear, select/disclosure chevrons and checkboxes use local SVG paths; capture uses an SVG thumb. Browser-native search clear glyphs are suppressed. New browser assertions verify that dialog/search cross controls contain SVG paths and no text, and that clearing dispatches the established filter input flow. No API or extension message protocol changed.
