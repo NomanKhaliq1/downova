@@ -57,24 +57,72 @@ async function refreshStatus() {
   status = r;
   await chrome.action.setBadgeBackgroundColor({ color: r.ok ? '#2563eb' : '#c0392b' });
   if (!r.ok) await chrome.action.setBadgeText({ text: '!' });
-  else await updateBadge();
+  else {
+    await updateBadge();
+    await getSettings();
+  }
   return r;
+}
+
+/** The app's settings; its exclusion lists are kept locally so a new download can be judged without waiting on the app. */
+async function getSettings() {
+  const s = (await api('GET', '/api/settings')).body;
+  if (s) await chrome.storage.local.set({ excl: s.exclusions || null });
+  return s;
+}
+
+/** The app's own exclusion lists (sites and file endings the user wants the browser to keep). */
+function isExcluded(ex, url) {
+  try {
+    const u = new URL(url);
+    const ext = (u.pathname.split('.').pop() || '').toLowerCase();
+    const host = u.hostname.toLowerCase();
+    return (ex?.extensions || []).some((e) => e.toLowerCase() === ext) || (ex?.sites || []).some((h) => host === h.toLowerCase() || host.endsWith(`.${h.toLowerCase()}`));
+  } catch {
+    return false;
+  }
 }
 
 const captureEnabled = async () => (await chrome.storage.local.get({ capture: true })).capture;
 
 // ---- catching downloads ----
 
-chrome.downloads.onCreated.addListener(async (item) => {
+// Chrome waits for this listener before it names the file or shows its own Save As window,
+// so a download taken over here never shows that window. True when the app took it.
+async function takeOver(item) {
   const url = item.finalUrl || item.url;
-  if (item.byExtensionId || !isCapturableUrl(url) || !(await captureEnabled())) return;
-  if (!status.ok && !(await refreshStatus()).ok) return; // app unreachable: the browser keeps the download
-  const cookies = await chrome.cookies.getAll({ url }).catch(() => []);
-  const r = await api('POST', '/api/capture', { url, referer: item.referrer || undefined, cookie: cookieHeader(cookies) || undefined, user_agent: navigator.userAgent });
-  if (r.ok && r.status === 200 && r.body?.captured) {
+  if (item.byExtensionId || !isCapturableUrl(url)) return false;
+  const o = await chrome.storage.local.get({ capture: true, ask: true, excl: null });
+  if (!o.capture) return false;
+  const drop = async () => {
     await chrome.downloads.cancel(item.id).catch(() => {});
     await chrome.downloads.erase({ id: item.id }).catch(() => {});
+    return true;
+  };
+  if (o.ask && !isExcluded(o.excl, url)) {
+    // like IDM: show the small window at once; the app check runs while it opens
+    const key = `pend:${Date.now()}`;
+    const base = (item.filename || '').split(/[\\/]/).pop();
+    await chrome.storage.session.set({ [key]: { url, referer: item.referrer || undefined, filename: base || fileName(url), size: item.totalBytes > 0 ? item.totalBytes : item.fileSize > 0 ? item.fileSize : null } });
+    chrome.windows.create({ url: `confirm.html?k=${encodeURIComponent(key)}`, type: 'popup', width: 600, height: 296, focused: true });
+    if (!status.ok && !(await refreshStatus()).ok) {
+      // app unreachable: the browser keeps the download (the window closes itself when it gets no settings)
+      await chrome.storage.session.remove(key);
+      return false;
+    }
+    return drop();
   }
+  if (!status.ok && !(await refreshStatus()).ok) return false; // app unreachable: the browser keeps the download
+  const cookies = await chrome.cookies.getAll({ url }).catch(() => []);
+  const r = await api('POST', '/api/capture', { url, referer: item.referrer || undefined, cookie: cookieHeader(cookies) || undefined, user_agent: navigator.userAgent });
+  return r.ok && r.status === 200 && r.body?.captured ? drop() : false;
+}
+
+chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
+  takeOver(item)
+    .catch(() => false)
+    .then((taken) => taken || suggest());
+  return true; // suggest() is called later
 });
 
 // ---- spotting media on pages ----
@@ -195,6 +243,39 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         const page = msg.pageUrl || sender.tab?.url || '';
         return reply({ media, ytdlp: isYtdlpPage(page) ? { ready: await toolsReady() } : null });
       }
+      case 'confirm_info': {
+        const p = (await chrome.storage.session.get(msg.key))[msg.key];
+        return reply({ pending: p || null, settings: await getSettings() });
+      }
+      case 'confirm_go': {
+        const p = (await chrome.storage.session.get(msg.key))[msg.key];
+        if (!p) return reply({ ok: false });
+        await chrome.storage.session.remove(msg.key);
+        const cookies = await chrome.cookies.getAll({ url: p.url }).catch(() => []);
+        return reply(await api('POST', '/api/tasks', { urls: safeForBatch(p.url), referer: p.referer, cookie: cookieHeader(cookies) || undefined, user_agent: navigator.userAgent, filename: msg.filename || undefined, dir: msg.dir || undefined, paused: msg.later || undefined }));
+      }
+      case 'pick_path':
+        // the Save As window waits for the user, so this call may take minutes
+        return reply(await call({ cmd: 'pick_path', path: String(msg.path || '') }, 600000));
+      case 'file_icon': {
+        // Windows' own icon for a file type, asked once per type and kept
+        const ext = String(msg.ext || '').toLowerCase();
+        const { icons } = await chrome.storage.local.get({ icons: {} });
+        if (!(ext in icons)) {
+          const r = await call({ cmd: 'file_icon', ext });
+          if (!r.ok) return reply({});
+          icons[ext] = r.png ? `data:image/png;base64,${r.png}` : '';
+          await chrome.storage.local.set({ icons });
+        }
+        return reply({ src: icons[ext] });
+      }
+      case 'task_get':
+        return reply(await api('GET', `/api/tasks/${Number(msg.id)}`));
+      case 'task_act':
+        return reply(await api('POST', `/api/tasks/${Number(msg.id)}/${msg.act === 'pause' ? 'pause' : 'resume'}`, {}));
+      case 'set_ask':
+        await chrome.storage.local.set({ ask: !!msg.on });
+        return reply({ ok: true });
       case 'add_page':
         return reply(await addPage(msg));
       case 'add':

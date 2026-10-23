@@ -111,7 +111,50 @@ pub fn quit_app(cfg: &Config) -> bool {
 
 /// The only calls the extension may make. Everything else is refused.
 fn allowed(method: &str, path: &str) -> bool {
-    matches!((method, path), ("GET", "/api/ping") | ("GET", "/api/settings") | ("POST", "/api/capture") | ("POST", "/api/tasks") | ("GET", "/api/tools"))
+    if matches!((method, path), ("GET", "/api/ping") | ("GET", "/api/settings") | ("POST", "/api/capture") | ("POST", "/api/tasks") | ("GET", "/api/tools")) {
+        return true;
+    }
+    // one task by number: read it, pause it, resume it (for the extension's small progress window)
+    let Some(rest) = path.strip_prefix("/api/tasks/") else { return false };
+    let (id, act) = rest.split_once('/').unwrap_or((rest, ""));
+    !id.is_empty() && id.bytes().all(|b| b.is_ascii_digit()) && matches!((method, act), ("GET", "") | ("POST", "pause") | ("POST", "resume"))
+}
+
+/// Windows "Save As" window for the extension's download dialog. Empty string when the user cancels.
+/// shortcut: blocks this relay while open (other extension calls wait), move to a thread if that hurts.
+fn pick_path(start: &str) -> io::Result<String> {
+    const SCRIPT: &str = "[Console]::OutputEncoding=[Text.Encoding]::UTF8;Add-Type -AssemblyName System.Windows.Forms;\
+        $d=New-Object System.Windows.Forms.SaveFileDialog;$d.OverwritePrompt=$false;$p=$env:DM_PICK;\
+        if($p){$d.FileName=[IO.Path]::GetFileName($p);$dir=[IO.Path]::GetDirectoryName($p);if($dir -and (Test-Path -LiteralPath $dir)){$d.InitialDirectory=$dir}};\
+        $f=New-Object System.Windows.Forms.Form -Property @{TopMost=$true;ShowInTaskbar=$false};\
+        if($d.ShowDialog($f) -eq 'OK'){[Console]::Out.Write($d.FileName)}";
+    powershell(SCRIPT, start)
+}
+
+/// Windows' icon for a file type (32 px PNG, base64), taken from an empty temp file with that ending.
+fn file_icon(ext: &str) -> io::Result<String> {
+    if ext.is_empty() || ext.len() > 10 || !ext.bytes().all(|b| b.is_ascii_alphanumeric()) {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "bad extension"));
+    }
+    const SCRIPT: &str = "Add-Type -AssemblyName System.Drawing;$t=Join-Path $env:TEMP ('downova-icon.'+$env:DM_PICK);\
+        [IO.File]::WriteAllBytes($t,[byte[]]@());try{$b=[System.Drawing.Icon]::ExtractAssociatedIcon($t).ToBitmap();\
+        $m=New-Object IO.MemoryStream;$b.Save($m,[System.Drawing.Imaging.ImageFormat]::Png);[Console]::Out.Write([Convert]::ToBase64String($m.ToArray()))}\
+        finally{Remove-Item -LiteralPath $t -ErrorAction SilentlyContinue}";
+    powershell(SCRIPT, ext)
+}
+
+/// Run a short PowerShell script; `arg` reaches it as $env:DM_PICK, never inside the script text.
+fn powershell(script: &str, arg: &str) -> io::Result<String> {
+    let mut cmd = Command::new("powershell.exe");
+    cmd.args(["-NoProfile", "-NonInteractive", "-STA", "-Command", script]).env("DM_PICK", arg);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    }
+    // output() gives the child no stdin, so it cannot eat the browser's messages
+    let out = cmd.output()?;
+    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
 }
 
 fn fail(id: &Value, error: &str) -> Value {
@@ -145,6 +188,14 @@ pub fn handle(cfg: &Config, msg: &Value) -> Value {
         } {
             Ok(()) => json!({"id": id, "ok": true}),
             Err(_) => fail(&id, "app_not_found"),
+        },
+        "pick_path" => match pick_path(msg["path"].as_str().unwrap_or("")) {
+            Ok(path) => json!({"id": id, "ok": true, "path": path}),
+            Err(_) => fail(&id, "dialog_failed"),
+        },
+        "file_icon" => match file_icon(msg["ext"].as_str().unwrap_or("")) {
+            Ok(png) => json!({"id": id, "ok": true, "png": png}),
+            Err(_) => fail(&id, "no_icon"),
         },
         "api" => {
             let (method, path) = (msg["method"].as_str().unwrap_or(""), msg["path"].as_str().unwrap_or(""));

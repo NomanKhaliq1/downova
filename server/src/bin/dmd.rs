@@ -1,7 +1,7 @@
 //! The background app: engine + local API + tray icon in one small process.
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
-use dm_core::{power, Event, FinishAction, Manager};
+use dm_core::{power, Event, Filter, FinishAction, Manager, Status};
 use dm_server::{clipboard, new_token, router, system, AppState};
 use serde::Deserialize;
 use std::io::{Read, Write};
@@ -24,6 +24,8 @@ struct Brand {
 enum UserEvent {
     Menu(MenuEvent),
     Tray(TrayIconEvent),
+    /// Downloads running or waiting, and the tray tooltip that lists them.
+    Status(usize, String),
     Quit,
 }
 
@@ -62,7 +64,7 @@ fn find_ui_dir() -> PathBuf {
 
 /// The brand mark (two interlocking corner brackets, same geometry as brand/assets/logo.svg) on a rounded tile
 /// in the brand colour, drawn in code so the tray icon always matches brand.toml.
-fn tray_icon(hex: &str) -> Icon {
+fn tray_icon(hex: &str, count: usize) -> Icon {
     let v = u32::from_str_radix(hex.trim_start_matches('#'), 16).unwrap_or(0x2563eb);
     let rgb = [(v >> 16) as u8, (v >> 8) as u8, v as u8];
     let mark = |x: f32, y: f32| (4.0..19.0).contains(&x) && (4.0..9.0).contains(&y) || (4.0..9.0).contains(&x) && (4.0..19.0).contains(&y) || (13.0..28.0).contains(&x) && (23.0..28.0).contains(&y) || (23.0..28.0).contains(&x) && (13.0..28.0).contains(&y);
@@ -91,7 +93,81 @@ fn tray_icon(hex: &str) -> Icon {
             }
         }
     }
+    if count > 0 {
+        badge(&mut px, n, count.min(99));
+    }
     Icon::from_rgba(px, n as u32, n as u32).expect("valid icon buffer")
+}
+
+/// A red dot with the number in the lower right corner, like the unread count on app icons.
+fn badge(px: &mut [u8], n: usize, count: usize) {
+    // 3x5 digits, one row per entry, high bit on the left
+    const DIGITS: [[u8; 5]; 10] = [[7, 5, 5, 5, 7], [2, 6, 2, 2, 7], [7, 1, 7, 4, 7], [7, 1, 7, 1, 7], [5, 5, 7, 1, 1], [7, 4, 7, 1, 7], [7, 4, 7, 5, 7], [7, 1, 1, 1, 1], [7, 5, 7, 5, 7], [7, 5, 7, 1, 7]];
+    let (cx, cy, r) = (23.5f32, 23.5f32, 8.5f32);
+    let mut put = |x: usize, y: usize, c: [u8; 3], a: f32| {
+        let i = (y * n + x) * 4;
+        for k in 0..3 {
+            px[i + k] = (px[i + k] as f32 * (1.0 - a) + c[k] as f32 * a) as u8;
+        }
+        px[i + 3] = px[i + 3].max((a * 255.0) as u8);
+    };
+    for y in 14..n {
+        for x in 14..n {
+            let d = ((x as f32 + 0.5 - cx).powi(2) + (y as f32 + 0.5 - cy).powi(2)).sqrt();
+            put(x, y, [0xe5, 0x39, 0x35], (r - d + 0.5).clamp(0.0, 1.0));
+        }
+    }
+    let digits: Vec<usize> = count.to_string().bytes().map(|b| (b - b'0') as usize).collect();
+    let width = digits.len() * 6 + digits.len() - 1; // each digit 3 px wide at scale 2, 1 px apart
+    let (left, top) = (cx as usize + 1 - width / 2 - 1, cy as usize - 4);
+    for (j, &d) in digits.iter().enumerate() {
+        for (row, bits) in DIGITS[d].iter().enumerate() {
+            for col in 0..3 {
+                if bits >> (2 - col) & 1 == 1 {
+                    for (sx, sy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
+                        put(left + j * 7 + col * 2 + sx, top + row * 2 + sy, [255; 3], 1.0);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn badge_fits_every_count() {
+    for c in 0..=150 {
+        let _ = tray_icon("#2563eb", c); // panics if a digit is drawn outside the 32 px icon
+    }
+    assert_eq!(speed(1_500_000), "1.5 MB/s");
+}
+
+/// "1.2 MB/s" style speed for the tray tooltip.
+fn speed(b: u64) -> String {
+    match b {
+        0..1_000 => format!("{b} B/s"),
+        1_000..1_000_000 => format!("{:.0} KB/s", b as f64 / 1e3),
+        _ => format!("{:.1} MB/s", b as f64 / 1e6),
+    }
+}
+
+/// Tray tooltip: how many downloads run, the total speed, then one line per file while it fits
+/// (Windows cuts tooltips after 127 characters).
+fn tooltip(brand: &str, tasks: &[dm_core::TaskView]) -> String {
+    if tasks.is_empty() {
+        return brand.to_string();
+    }
+    let running = tasks.iter().filter(|t| t.task.status == Status::Downloading).count();
+    let mut tip = format!("{brand}: {running} downloading, {} waiting · {}", tasks.len() - running, speed(tasks.iter().map(|t| t.speed).sum()));
+    for t in tasks {
+        let name: String = t.task.name.chars().take(26).collect();
+        let pct = if t.task.total > 0 { format!(" {}%", t.task.downloaded * 100 / t.task.total) } else { String::new() };
+        let line = format!("\n{name}{pct}");
+        if tip.chars().count() + line.chars().count() > 127 {
+            break;
+        }
+        tip.push_str(&line);
+    }
+    tip
 }
 fn main() {
     let brand: Brand = toml::from_str(include_str!("../../../brand/brand.toml")).expect("brand/brand.toml");
@@ -139,11 +215,18 @@ fn main() {
         }
     }
 
-    let std_listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind loopback");
+    // reuse the last port and token when free, so a window left open across a restart reconnects on Retry
+    let last: Option<(u16, String)> = std::fs::read(&api_file)
+        .ok()
+        .and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok())
+        .and_then(|v| Some((v["port"].as_u64()? as u16, v["token"].as_str()?.to_string())));
+    let (std_listener, token) = match last.and_then(|(p, t)| std::net::TcpListener::bind(("127.0.0.1", p)).ok().map(|l| (l, t))) {
+        Some(x) => x,
+        None => (std::net::TcpListener::bind("127.0.0.1:0").expect("bind loopback"), new_token()),
+    };
     std_listener.set_nonblocking(true).unwrap();
     let port = std_listener.local_addr().unwrap().port();
     let listener = tokio::net::TcpListener::from_std(std_listener).unwrap();
-    let token = new_token();
     let (clip_tx, _) = broadcast::channel(8);
     let quit = Arc::new(tokio::sync::Notify::new());
     let state = Arc::new(AppState {
@@ -215,14 +298,33 @@ fn main() {
         let _ = p.send_event(UserEvent::Tray(e));
     }));
 
-    let _tray = TrayIconBuilder::new().with_menu(Box::new(menu)).with_tooltip(&brand.name).with_icon(tray_icon(&brand.primary_color)).build().expect("tray icon");
+    let tray = TrayIconBuilder::new().with_menu(Box::new(menu)).with_tooltip(&brand.name).with_icon(tray_icon(&brand.primary_color, 0)).build().expect("tray icon");
+
+    // once a second: how many downloads are running or waiting, for the tray number and tooltip
+    {
+        let (mgr, proxy, name) = (mgr.clone(), proxy.clone(), brand.name.clone());
+        tokio::spawn(async move {
+            let mut last = String::new();
+            loop {
+                let mut tasks: Vec<_> = mgr.list(&Filter::default()).into_iter().filter(|t| matches!(t.task.status, Status::Downloading | Status::Queued)).collect();
+                tasks.sort_by_key(|t| (t.task.status != Status::Downloading, t.task.id));
+                let tip = tooltip(&name, &tasks);
+                if tip != last {
+                    let _ = proxy.send_event(UserEvent::Status(tasks.len(), tip.clone()));
+                    last = tip;
+                }
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+        });
+    }
+    let mut shown = 0;
 
     if !background {
         system::open_ui(&ui_url(port, &token, &view));
     }
 
     let rt_handle = rt.handle().clone();
-    let (mgr2, api2) = (mgr.clone(), api_file.clone());
+    let mgr2 = mgr.clone();
     event_loop.run(move |event, _, flow| {
         *flow = ControlFlow::Wait;
         let _keep = &rt; // the runtime lives as long as the event loop
@@ -241,9 +343,16 @@ fn main() {
                 }
             }
             TaoEvent::UserEvent(UserEvent::Tray(TrayIconEvent::DoubleClick { .. })) => system::open_ui(&ui_url(port, &token, "main")),
+            TaoEvent::UserEvent(UserEvent::Status(count, tip)) => {
+                let _ = tray.set_tooltip(Some(tip));
+                if count != shown {
+                    let _ = tray.set_icon(Some(tray_icon(&brand.primary_color, count)));
+                    shown = count;
+                }
+            }
             TaoEvent::UserEvent(UserEvent::Quit) => {
                 rt_handle.block_on(mgr2.shutdown()); // keeps partial files and writes the state
-                let _ = std::fs::remove_file(&api2);
+                // api.json stays: readers ping before trusting it, and the next start reuses its port and token
                 *flow = ControlFlow::Exit;
             }
             _ => {}

@@ -1,0 +1,20 @@
+*{box-sizing:border-box}
+:root{font:13px/1.45 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--bg:#f3f5f9;--text:#1b2436;--muted:#5d6a80;--line:#d3d9e3;--field:#fff;--hover:#e9edf4;--tile:#fff;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#161b24;--text:#e8edf6;--muted:#97a3b8;--line:#2f3848;--field:#1e2430;--hover:#283040;--tile:#202734;color-scheme:dark}}
+body{margin:0;padding:18px 20px 16px;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+input,select,button{font:inherit;color:inherit;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--field);padding:0 10px;outline:none;transition:border-color .12s,background-color .12s,box-shadow .12s}
+input[type=text],select{width:100%;min-width:0;color:var(--text)}input[readonly]{color:var(--muted)}
+input[type=text]:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
+button{cursor:pointer}button:hover{background:var(--hover)}button:focus-visible{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 30%,transparent)}
+button.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}button.primary:hover{filter:brightness(1.08)}button:disabled{opacity:.5;cursor:default}
+.top{display:flex;gap:18px}.form{flex:1;min-width:0;display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:center}.form>label{text-align:right;color:var(--muted);font-size:12px}
+.row{display:flex;gap:6px}#browse{width:34px;padding:0;flex:none;font-weight:600}
+.check{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;cursor:pointer}.check input{width:15px;height:15px;margin:0;accent-color:var(--brand)}
+aside{width:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.tile{width:64px;height:64px;display:grid;place-items:center;border-radius:12px;background:var(--tile);border:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tile b{font-size:12px;font-weight:700;letter-spacing:.4px;color:var(--brand)}#icon:not([hidden])+b{display:none}
+aside span{color:var(--muted);font-size:12px;text-align:center}
+p{margin:8px 0 0;color:#d9534f;font-size:12px;word-break:break-all;min-height:17px}
+.btns{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}.btns button{min-width:118px}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:12px 0}.bar i{display:block;height:100%;width:0;background:var(--brand);transition:width .6s linear}
+#prog p{color:var(--muted)}#pname{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}[hidden]{display:none!important}

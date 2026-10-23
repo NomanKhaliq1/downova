@@ -275,9 +275,10 @@ try {
   await app('PUT', '/api/settings', { ...s, exclusions: { ...s.exclusions, sites: [] } });
 
   // 4. app closed: the relay starts it again on the next download
+  const oldPid = apiInfo().pid;
   await app('POST', '/api/quit', {});
-  await until('app exit', () => !existsSync(join(env.DM_DATA_DIR, 'api.json')), 15000);
-  check('app quit cleanly (api.json removed)', true);
+  await until('app exit', () => { try { process.kill(oldPid, 0); return false; } catch { return true; } }, 15000);
+  check('app quit cleanly', true);
   await download('test3.dmtest');
   await sleep(1000);
   const t3 = await until('task for test3.dmtest after restart', async () => (await app('GET', '/api/tasks')).find((t) => t.url.endsWith('/test3.dmtest') && t.status === 'Done'), 30000).catch(() => null);

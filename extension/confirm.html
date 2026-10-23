@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Download File Info</title><link rel="icon" href="icons/16.png" type="image/png"><link rel="stylesheet" href="popup-brand.css"><link rel="stylesheet" href="confirm.css"></head><body>
+<section id="ask">
+  <div class="top">
+    <div class="form">
+      <label for="url">URL</label><input type="text" id="url" readonly>
+      <label for="cat">Category</label><select id="cat"></select>
+      <label for="path">Save As</label><div class="row"><input type="text" id="path" spellcheck="false"><button id="browse" title="Choose where to save">…</button></div>
+      <span></span><label class="check"><input type="checkbox" id="remember"> <span id="rememberText"></span></label>
+    </div>
+    <aside><div class="tile"><img id="icon" alt="" width="32" height="32" hidden><b id="ext"></b></div><span id="size"></span></aside>
+  </div>
+  <p id="msg" role="status"></p>
+  <div class="btns"><button id="later">Download Later</button><button id="start" class="primary">Start Download</button><button id="cancel">Cancel</button></div>
+</section>
+<section id="prog" hidden>
+  <strong id="pname"></strong>
+  <div class="bar"><i id="fill"></i></div>
+  <p id="pinfo"></p>
+  <div class="btns"><button id="pause">Pause</button><button id="close">Hide</button></div>
+</section>
+<script type="module" src="confirm.js"></script></body></html>

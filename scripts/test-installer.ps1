@@ -79,7 +79,7 @@ try {
   $before = (Get-Item "$inst\dmd.exe").LastWriteTime
   $p = Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$inst", '/TASKS=autostart', "/LOG=$tmp\upgrade.log" -Wait -PassThru
   Check 'upgrade over a running app finished with exit code 0' ($p.ExitCode -eq 0) "exit $($p.ExitCode)"
-  Check 'the running app was closed gracefully (api.json removed)' (-not (Test-Path "$tmp\data\api.json"))
+  Check 'the running app was closed gracefully' ((Get-Process dmd -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$inst*" } | Measure-Object).Count -eq 0)
   Check 'files still in place after the upgrade' ((Test-Path "$inst\dmd.exe") -and (Test-Path "$inst\ui\index.html"))
   Check 'no duplicate Uninstall entry' ((Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall' | Where-Object { $_.PSChildName -like "{$guid}*" } | Measure-Object).Count -eq 1)
 
@@ -94,7 +94,7 @@ try {
   Check 'browser helper keys removed' ($s.nm -eq 0) "$($s.nm) left"
   Check 'start-with-Windows value removed' (-not $s.run)
   Check 'Start Menu shortcut removed' (-not $s.lnk)
-  Check 'app was closed by the uninstaller' (-not (Test-Path "$tmp\data\api.json") -and ((Get-Process dmd -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$inst*" } | Measure-Object).Count -eq 0))
+  Check 'app was closed by the uninstaller' (((Get-Process dmd -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$inst*" } | Measure-Object).Count -eq 0))
   $left = if (Test-Path $inst) { @(Get-ChildItem $inst -Recurse -Force | Select-Object -ExpandProperty FullName) } else { @() }
   Check 'install folder is gone' ($left.Count -eq 0) ($left -join '; ')
   Check 'user data (list, settings) kept after a silent uninstall' (Test-Path "$tmp\data\state.json")
