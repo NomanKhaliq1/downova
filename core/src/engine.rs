@@ -57,6 +57,8 @@ impl Default for Options {
 pub struct Progress {
     pub downloaded: AtomicU64,
     pub total: AtomicU64,
+    /// File name chosen for this download (empty until the probe is done).
+    pub name: Mutex<String>,
 }
 
 /// Handles the caller keeps to watch, throttle or cancel a running download.
@@ -65,6 +67,8 @@ pub struct Control {
     pub progress: Arc<Progress>,
     pub cancel: Arc<AtomicBool>,
     pub limiter: Arc<Limiter>,
+    /// Optional limiter shared by many downloads (the app-wide speed cap).
+    pub global: Option<Arc<Limiter>>,
 }
 
 impl Control {
@@ -73,6 +77,19 @@ impl Control {
             progress: Arc::default(),
             cancel: Arc::default(),
             limiter: Arc::new(Limiter::new(o.speed_limit)),
+            global: None,
+        }
+    }
+
+    pub fn with_global(mut self, g: Arc<Limiter>) -> Self {
+        self.global = Some(g);
+        self
+    }
+
+    async fn throttle(&self, n: u64) {
+        self.limiter.take(n).await;
+        if let Some(g) = &self.global {
+            g.take(n).await;
         }
     }
 }
@@ -165,6 +182,7 @@ pub async fn download(url: &str, dir: &Path, o: &Options, ctl: &Control) -> Resu
     ctl.progress.total.store(p.total.unwrap_or(0), Relaxed);
 
     let name = pick_name(dir, &p.filename, url);
+    *ctl.progress.name.lock().unwrap() = name.clone();
     let final_path = dir.join(&name);
     let part = dir.join(format!("{name}.part"));
     let st_path = dir.join(format!("{name}.part.json"));
@@ -220,7 +238,7 @@ async fn single_once(client: &Client, url: &str, part: &Path, ctl: &Control) -> 
         if ctl.cancel.load(Relaxed) {
             return Err(Error::Cancelled);
         }
-        ctl.limiter.take(chunk.len() as u64).await;
+        ctl.throttle(chunk.len() as u64).await;
         f.write_all(&chunk)?; // shortcut: blocking write on the async thread, fine for local disks
         ctl.progress.downloaded.fetch_add(chunk.len() as u64, Relaxed);
     }
@@ -348,7 +366,7 @@ impl Ctx {
             if n == 0 {
                 break; // another worker took the rest of this segment
             }
-            self.ctl.limiter.take(n).await;
+            self.ctl.throttle(n).await;
             write_all_at(&self.file, &chunk[..n as usize], pos)?; // shortcut: blocking positional write, fine for local disks
             let mut g = self.inner.lock().unwrap();
             let s = &mut g.segs[i];

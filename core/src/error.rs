@@ -20,6 +20,12 @@ pub enum Error {
     Checksum,
     #[error("not enough free disk space")]
     DiskSpace,
+    #[error("already in the list (task {0})")]
+    Duplicate(u64),
+    #[error("no such task or queue")]
+    NotFound,
+    #[error("invalid input: {0}")]
+    Invalid(String),
 }
 
 impl Error {
