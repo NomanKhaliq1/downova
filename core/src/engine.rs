@@ -189,7 +189,17 @@ fn sha256_of(path: &Path) -> std::io::Result<String> {
 pub async fn download(url: &str, dir: &Path, o: &Options, ctl: &Control) -> Result<PathBuf> {
     fs::create_dir_all(dir)?;
     let client = build_client(o)?;
-    let p = probe(&client, url).await?;
+    // a connection that times out once (a dead IPv6 route, a busy CDN node) often works on the next try
+    let mut attempt = 0;
+    let p = loop {
+        match probe(&client, url).await {
+            Err(e) if e.retryable() && attempt < 3 && !ctl.cancel.load(Relaxed) => {
+                attempt += 1;
+                tokio::time::sleep(backoff(attempt)).await;
+            }
+            r => break r?,
+        }
+    };
     ctl.progress.total.store(p.total.unwrap_or(0), Relaxed);
 
     if crate::stream::is_manifest(&p) {
