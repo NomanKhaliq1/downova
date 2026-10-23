@@ -16,10 +16,10 @@ const xml=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&q
 const path='M4 4H19V9H9V19H4Z M28 28H13V23H23V13H28Z';
 const svg=(color,wide=false)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${wide?360:32}" height="32" viewBox="0 0 ${wide?360:32} 32" role="img" aria-label="${xml(brand.name)}"><path fill="${color}" d="${path}"/>${wide?`<text x="44" y="24" font-family="Segoe UI,system-ui,sans-serif" font-size="23" font-weight="650" fill="${color}">${xml(brand.name)}</text>`:''}</svg>\n`;
 write('brand/assets/logo.svg',svg(brand.primary_color));write('brand/assets/logo-white.svg',svg('#ffffff'));write('brand/assets/logo-wide.svg',svg(brand.primary_color,true));write('brand/assets/logo-wide-white.svg',svg('#ffffff',true));write('ui/mark.svg',svg(brand.primary_color));
-write('ui/brand.js',`// Generated from brand/brand.toml by scripts/make-icons.mjs.\nexport const brand = ${JSON.stringify(brand,null,2)};\n`);
+write('ui/brand.js',`// Generated from brand/brand.toml by scripts/make-icons.mjs.\nconst brand = ${JSON.stringify(brand,null,2)};\n`);
 for(const file of ['ui/brand.css','extension/popup-brand.css'])write(file,`/* Generated from brand/brand.toml. */\n:root{--brand:${brand.primary_color}}\n`);
 // Popup has its own copy of the shared translation object, so it stays self-contained.
-write('extension/popup-strings.js',readFileSync(join(root,'ui/strings.js'),'utf8'));
+write('extension/popup-strings.js',readFileSync(join(root,'ui/strings.js'),'utf8').replace('const S =','export const S ='));
 const mark=(x,y)=>(x>=4&&x<19&&y>=4&&y<9)||(x>=4&&x<9&&y>=4&&y<19)||(x>=13&&x<28&&y>=23&&y<28)||(x>=23&&x<28&&y>=13&&y<28);
 function rgba(size,mode='app'){
  const out=Buffer.alloc(size*size*4);const aa=4;

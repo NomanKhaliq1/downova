@@ -1,13 +1,11 @@
-import { brand } from './brand.js';
-import { expandPreview } from './helpers.js';
 const categories = ['Compressed','Documents','Music','Video','Images','Programs','Other'];
-export const mockSettings = () => ({download_root:'C:\\Preview\\Downloads',categories:categories.map((name,i)=>({name,extensions:[['zip','7z'],['pdf','docx'],['mp3','flac'],['mp4','mkv'],['jpg','png'],['exe','msi'],[]][i],folder:name})),other_folder:'Other',site_rules:[],exclusions:{extensions:['torrent'],sites:[]},connections:8,max_simultaneous:3,speed_limit:null,user_agent:null,proxy:null,on_complete_command:null,clipboard_monitor:true,start_with_windows:false,ffmpeg_path:null});
-export function mockTasks(count=8) {
+const mockSettings = () => ({download_root:'C:\\Preview\\Downloads',categories:categories.map((name,i)=>({name,extensions:[['zip','7z'],['pdf','docx'],['mp3','flac'],['mp4','mkv'],['jpg','png'],['exe','msi'],[]][i],folder:name})),other_folder:'Other',site_rules:[],exclusions:{extensions:['torrent'],sites:[]},connections:8,max_simultaneous:3,speed_limit:null,user_agent:null,proxy:null,on_complete_command:null,clipboard_monitor:true,start_with_windows:false,ffmpeg_path:null});
+function mockTasks(count=8) {
   const names=['Design resources.zip','Coastal walk · 4K.mp4','Windows installer.exe','Project overview.pdf','Night drive.flac','Brand references.zip','Summer collection.jpg','Interview recording.mp4'];
   const statuses=['Downloading','Downloading','Queued','Done','Paused','Done','Failed','Queued'];
   return Array.from({length:count},(_,i)=>({id:i+1,url:`https://example.test/files/${i+1}`,name:names[i%8].replace('.',i>7?` ${i+1}.`:'.'),path:`C:\\Preview\\Downloads\\${names[i%8]}`,dir:'C:\\Preview\\Downloads',category:['Compressed','Video','Programs','Documents','Music','Compressed','Images','Video'][i%8],queue:i%3?'Main':'Night',status:statuses[i%8],total:(i%8+1)*158334976,downloaded:statuses[i%8]==='Done'?(i%8+1)*158334976:Math.round((i%8+1)*158334976*.37),speed:statuses[i%8]==='Downloading'?5242880+i*100000:0,eta_secs:statuses[i%8]==='Downloading'?28+i*15:null,error:statuses[i%8]==='Failed'?'HTTP 403 · Access denied':null,note:i===1?'Separate video and audio will be merged with ffmpeg.':'',added:1792780170-i*700,finished:null,priority:0,opts:{connections:8,headers:[],user_agent:null}}));
 }
-export function createMock() {
+function createMock() {
   let tasks=mockTasks(), settings=mockSettings(), queues=[{name:'Main',enabled:true,max_simultaneous:3,schedule:null,on_finish:'None'},{name:'Night',enabled:true,max_simultaneous:2,schedule:{days:127,start:1380,stop:360},on_finish:'None'}];
   return {setTasks(value){tasks=value},tick(){tasks.filter(t=>t.status==='Downloading').forEach(t=>{t.downloaded=Math.min(t.total,t.downloaded+t.speed/2);t.eta_secs=Math.ceil((t.total-t.downloaded)/t.speed);if(t.downloaded===t.total){t.status='Done';t.speed=0}});return structuredClone(tasks)},async request(path,method='GET',body){
     const [route,query='']=path.split('?');const params=new URLSearchParams(query);const parts=route.split('/').filter(Boolean);let data={ok:true};
