@@ -89,7 +89,8 @@ fn main() {
     let brand: Brand = toml::from_str(include_str!("../../../brand/brand.toml")).expect("brand/brand.toml");
     let background = std::env::args().any(|a| a == "--background");
     let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
-    let data_dir = appdata.join(&brand.product_id);
+    // DM_DATA_DIR / DM_DOWNLOAD_DIR let tests run against throwaway folders without touching the user's
+    let data_dir = std::env::var_os("DM_DATA_DIR").map(PathBuf::from).unwrap_or_else(|| appdata.join(&brand.product_id));
     std::fs::create_dir_all(&data_dir).expect("create data folder");
     let api_file = data_dir.join("api.json");
 
@@ -102,7 +103,10 @@ fn main() {
 
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().expect("runtime");
     let _guard = rt.enter();
-    let downloads = std::env::var_os("USERPROFILE").map(|p| PathBuf::from(p).join("Downloads")).unwrap_or_else(|| PathBuf::from("Downloads"));
+    let downloads = std::env::var_os("DM_DOWNLOAD_DIR")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("USERPROFILE").map(|p| PathBuf::from(p).join("Downloads")))
+        .unwrap_or_else(|| PathBuf::from("Downloads"));
     let mgr = match Manager::open(data_dir.clone(), downloads) {
         Ok(m) => m,
         Err(e) => {

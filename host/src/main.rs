@@ -75,7 +75,7 @@ fn main() {
         _ => {
             let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
             let cfg = Config {
-                data_dir: appdata.join(&brand.product_id),
+                data_dir: std::env::var_os("DM_DATA_DIR").map(PathBuf::from).unwrap_or_else(|| appdata.join(&brand.product_id)),
                 app_path: dir.join("dmd.exe"),
                 product_id: brand.product_id,
                 start_wait: Duration::from_secs(6),
