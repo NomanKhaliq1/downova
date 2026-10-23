@@ -1,4 +1,4 @@
-# Single place for everything that carries the product's identity.
+﻿# Single place for everything that carries the product's identity.
 # Replace the values; nothing else in the code base hard-codes a name.
 name = "BRAND_NAME"
 product_id = "brandname"          # lowercase, no spaces: folder names, registry keys, native host id
@@ -8,3 +8,6 @@ primary_color = "#2563eb"
 logo = "assets/logo.svg"
 tray_icon = "assets/tray.ico"
 user_agent_suffix = ""            # appended to the default User-Agent when empty means none
+# Chrome extension IDs allowed to talk to the native host (the unpacked/enterprise build uses the one derived from the manifest key).
+extension_ids = ["afiiigijbfikndgkkodnpdipheoijcoj"]
+

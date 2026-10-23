@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Downloads</title>
+<!-- Functional placeholder popup. Codex replaces the look; ids and popup.js behaviour stay. -->
+<style>
+  body { font: 13px system-ui, sans-serif; width: 380px; margin: 0; padding: 12px; color: #111; background: #fff; }
+  @media (prefers-color-scheme: dark) { body { color: #eee; background: #1b1b1b; } input, button { background: #2a2a2a; color: #eee; border: 1px solid #444; } }
+  h4 { margin: 12px 0 6px; }
+  .row { display: flex; gap: 6px; align-items: center; padding: 3px 0; }
+  .row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .muted { opacity: .65; }
+  #status.bad { color: #c0392b; }
+  #list { max-height: 220px; overflow: auto; }
+  input[type=text] { width: 100%; box-sizing: border-box; margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="row"><b id="brand"></b><span id="status" class="muted"></span></div>
+<label class="row"><input type="checkbox" id="capture"> Catch browser downloads</label>
+
+<h4>Found on this page</h4>
+<div id="media" class="muted">Nothing yet. Play a video or audio and it shows up here.</div>
+
+<h4>Page links</h4>
+<div class="row"><button id="links">Links</button><button id="images">Images</button><button id="openUi" style="margin-left:auto">Open manager</button></div>
+<div id="grab" hidden>
+  <input type="text" id="filter" placeholder="Filter: words, or /regex/">
+  <div class="row"><button id="all">Select all</button><button id="none">None</button><button id="go">Download selected</button><span id="count" class="muted"></span></div>
+  <div id="list"></div>
+</div>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

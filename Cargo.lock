@@ -477,6 +477,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "dm-host"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "dm-core",
+ "dm-server",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tiny_http",
+ "tokio",
+ "toml 1.1.8+spec-1.1.0",
+]
+
+[[package]]
 name = "dm-server"
 version = "0.1.0"
 dependencies = [

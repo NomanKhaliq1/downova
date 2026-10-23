@@ -1,0 +1,24 @@
+[package]
+name = "dm-host"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "dm_host"
+
+[[bin]]
+name = "dmhost"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1.0.154"
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.8"
+
+[dev-dependencies]
+dm-core = { path = "../core" }
+dm-server = { path = "../server" }
+axum = "0.8.9"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "time", "sync", "net"] }
+tiny_http = "0.12.0"
+sha2 = "0.11.1"
