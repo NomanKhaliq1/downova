@@ -28,6 +28,7 @@ write('extension/_locales/en/messages.json',JSON.stringify({extName:{message:bra
 write('extension/popup-strings.js',readFileSync(join(root,'ui/strings.js'),'utf8').replace('const S =','export const S ='));
 const outline=[[13,4],[19,4],[28,13],[28,19],[19,28],[13,28],[13,22],[16,22],[22,16],[16,10],[13,10]];
 const mark=(x,y)=>{if(x>=4&&x<10&&y>=4&&y<28)return true;let inside=false;for(let i=0,j=outline.length-1;i<outline.length;j=i++){const [ax,ay]=outline[i],[bx,by]=outline[j];if((ay>y)!==(by>y)&&x<(bx-ax)*(y-ay)/(by-ay)+ax)inside=!inside}return inside};
+if(!mark(6,16)||!mark(25,16)||mark(12,16)||mark(1,1))throw Error('Monogram geometry check failed');
 function rgba(size,mode='app'){
  const out=Buffer.alloc(size*size*4);const aa=4;
  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
