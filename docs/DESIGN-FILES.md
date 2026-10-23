@@ -5,6 +5,7 @@ Branch: `design`. Files changed or added relative to `master`. The pre-existing 
 | Status | File |
 | --- | --- |
 | Added | [brand/assets/app.ico](../brand/assets/app.ico) |
+| Added | [brand/assets/identity-preview.svg](../brand/assets/identity-preview.svg) |
 | Added | [brand/assets/logo-white.svg](../brand/assets/logo-white.svg) |
 | Added | [brand/assets/logo-wide-white.svg](../brand/assets/logo-wide-white.svg) |
 | Added | [brand/assets/logo-wide.svg](../brand/assets/logo-wide.svg) |
@@ -16,6 +17,7 @@ Branch: `design`. Files changed or added relative to `master`. The pre-existing 
 | Added | [brand/assets/wizard-large@2x.bmp](../brand/assets/wizard-large@2x.bmp) |
 | Added | [brand/assets/wizard-small.bmp](../brand/assets/wizard-small.bmp) |
 | Added | [brand/assets/wizard-small@2x.bmp](../brand/assets/wizard-small@2x.bmp) |
+| Changed | [brand/brand.toml](../brand/brand.toml) |
 | Added | [docs/DESIGN-ACCEPTANCE.md](../docs/DESIGN-ACCEPTANCE.md) |
 | Added | [docs/DESIGN-FILES.md](../docs/DESIGN-FILES.md) |
 | Added | [docs/DESIGN.md](../docs/DESIGN.md) |
@@ -106,6 +108,7 @@ Branch: `design`. Files changed or added relative to `master`. The pre-existing 
 | Added | [docs/screenshots/history-light-1600.png](../docs/screenshots/history-light-1600.png) |
 | Added | [docs/screenshots/history-light-360.png](../docs/screenshots/history-light-360.png) |
 | Added | [docs/screenshots/history-light-900.png](../docs/screenshots/history-light-900.png) |
+| Added | [docs/screenshots/identity-preview.png](../docs/screenshots/identity-preview.png) |
 | Added | [docs/screenshots/loading-dark-1600.png](../docs/screenshots/loading-dark-1600.png) |
 | Added | [docs/screenshots/loading-dark-360.png](../docs/screenshots/loading-dark-360.png) |
 | Added | [docs/screenshots/loading-dark-900.png](../docs/screenshots/loading-dark-900.png) |
@@ -228,11 +231,14 @@ Branch: `design`. Files changed or added relative to `master`. The pre-existing 
 | Added | [docs/screenshots/welcome-light-1600.png](../docs/screenshots/welcome-light-1600.png) |
 | Added | [docs/screenshots/welcome-light-360.png](../docs/screenshots/welcome-light-360.png) |
 | Added | [docs/screenshots/welcome-light-900.png](../docs/screenshots/welcome-light-900.png) |
+| Changed | [extension/_locales/en/messages.json](../extension/_locales/en/messages.json) |
+| Changed | [extension/brand.js](../extension/brand.js) |
 | Changed | [extension/icons/128.png](../extension/icons/128.png) |
 | Changed | [extension/icons/16.png](../extension/icons/16.png) |
 | Changed | [extension/icons/32.png](../extension/icons/32.png) |
 | Changed | [extension/icons/48.png](../extension/icons/48.png) |
 | Added | [extension/popup-brand.css](../extension/popup-brand.css) |
+| Added | [extension/popup-icons.js](../extension/popup-icons.js) |
 | Added | [extension/popup-strings.js](../extension/popup-strings.js) |
 | Added | [extension/popup.css](../extension/popup.css) |
 | Changed | [extension/popup.html](../extension/popup.html) |
@@ -245,6 +251,7 @@ Branch: `design`. Files changed or added relative to `master`. The pre-existing 
 | Added | [ui/brand.css](../ui/brand.css) |
 | Added | [ui/brand.js](../ui/brand.js) |
 | Added | [ui/helpers.js](../ui/helpers.js) |
+| Added | [ui/icons.js](../ui/icons.js) |
 | Changed | [ui/index.html](../ui/index.html) |
 | Added | [ui/mark.svg](../ui/mark.svg) |
 | Added | [ui/mock.js](../ui/mock.js) |

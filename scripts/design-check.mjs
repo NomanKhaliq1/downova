@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { runInNewContext } from 'node:vm';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const expectedName=/^name\s*=\s*"([^"]+)"/m.exec(readFileSync(join(root,'brand/brand.toml'),'utf8'))[1];
 const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.DM_PLAYWRIGHT||'C:/Users/PMLS/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const {expandPreview,filterLinks,percent}=runInNewContext(readFileSync(join(root,'ui/helpers.js'),'utf8')+';({expandPreview,filterLinks,percent})');
@@ -34,7 +35,7 @@ const shots=join(root,'docs/screenshots');mkdirSync(shots,{recursive:true});
 async function shot(name){await page.screenshot({path:join(shots,name+'.png'),fullPage:!await page.evaluate(()=>!!document.querySelector('#dialog')?.open)});screenshots.push(name+'.png')}
 async function goto(query=''){await page.goto(origin+'/ui/index.html?mock=1'+query);await page.locator('.shell').waitFor();}
 try{
- await goto();assert.equal(await page.locator('tr[data-id]').count(),8);
+ await goto();assert.equal(await page.locator('tr[data-id]').count(),8);assert.equal(await page.locator('.brand').innerText(),expectedName);assert.equal(await page.locator('.fileicon svg').count(),8);assert.equal(await page.locator('.fileicon').first().innerText(),'');await page.locator('[data-action="sort:name"]').click();assert.equal(await page.locator('[data-action="sort:name"] svg').count(),1);
  await page.locator('[data-action=add]').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('[name=urls]').evaluate(e=>e===document.activeElement),true);
  for(let i=0;i<25;i++){await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.querySelector('dialog').contains(document.activeElement)),true)}await page.keyboard.press('Escape');assert.equal(await page.locator('#dialog').evaluate(e=>e.open),false);
  await page.locator('[data-select="1"]').check();await page.locator('[data-action="bulk:pause"]').click();assert.match(await page.locator('tr[data-id="1"]').innerText(),/Paused/);
@@ -75,7 +76,7 @@ try{
  const filePage=await context.newPage();await filePage.goto(new URL('../ui/index.html?mock=1',import.meta.url).href);await filePage.locator('tr[data-id="1"]').waitFor();assert.equal(await filePage.locator('tr[data-id]').count(),8);await filePage.close();
  assert.equal(requests.filter(r=>new URL(r.url).hostname!=='127.0.0.1').length,0);
  const folderSize=dir=>readdirSync(dir).reduce((sum,file)=>sum+(statSync(join(dir,file)).isDirectory()?folderSize(join(dir,file)):statSync(join(dir,file)).size),0);
- const uiBytes=folderSize(join(root,'ui')),popupBytes=['popup.html','popup.css','popup.js','popup-brand.css','popup-strings.js','lib.js','brand.js','icons/16.png','icons/32.png'].reduce((n,f)=>n+statSync(join(root,'extension',f)).size,0);assert(uiBytes<300000);assert(popupBytes<60000);
+ const uiBytes=folderSize(join(root,'ui')),popupBytes=['popup.html','popup.css','popup.js','popup-brand.css','popup-strings.js','popup-icons.js','lib.js','brand.js','icons/16.png','icons/32.png'].reduce((n,f)=>n+statSync(join(root,'extension',f)).size,0);assert(uiBytes<300000);assert(popupBytes<60000);
  const previous=capture?null:JSON.parse(readFileSync(join(root,'docs/design-browser-log.json'),'utf8'));
  writeFileSync(join(root,'docs/design-browser-log.json'),JSON.stringify({date:'2026-10-24',uiBytes,popupBytes,requests:previous?[...previous.requests,...requests]:requests,failures,screenshots:previous?previous.screenshots:screenshots},null,2));
  assert.deepEqual(failures,[]);console.log(JSON.stringify({uiBytes,popupBytes,screenshots:screenshots.length,requests:requests.length,failures}));

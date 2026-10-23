@@ -1,5 +1,7 @@
 # Screenshot index
 
+Downova identity: [light and dark logo preview](identity-preview.png).
+
 Mock previews captured in Chrome. Open any image at full size. Dialogs use viewport captures; ordinary screens use full-page captures. All screens are also checked for RTL overflow.
 
 | Screen / state | Light 360 | Dark 360 | Light 900 | Dark 900 | Light 1600 | Dark 1600 |
